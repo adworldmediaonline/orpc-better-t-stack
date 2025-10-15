@@ -17,7 +17,8 @@ import {
 	Filter,
 	ChevronDown,
 	ArrowUpDown,
-	Search
+	Search,
+	ChevronRight
 } from "lucide-react";
 import { format } from "date-fns";
 import type { ColumnDef, ColumnFiltersState, SortingState } from "@tanstack/react-table";
@@ -38,6 +39,7 @@ import {
 	DropdownMenuTrigger,
 	DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -61,6 +63,8 @@ interface Email {
 		recipientEmail: string;
 		recipientName: string | null;
 		status: string;
+		deliveredAt: Date | null;
+		openedAt: Date | null;
 	}>;
 	createdAt: Date;
 }
@@ -223,11 +227,127 @@ export function EmailsContent() {
 				},
 				cell: ({ row }) => {
 					const recipients = row.getValue("recipients") as Email["recipients"];
+
+					if (recipients.length === 0) {
+						return (
+							<div className="flex items-center gap-2">
+								<Users className="h-4 w-4 text-muted-foreground" />
+								<span className="text-sm text-muted-foreground">No recipients</span>
+							</div>
+						);
+					}
+
 					return (
-						<div className="flex items-center gap-2">
-							<Users className="h-4 w-4 text-muted-foreground" />
-							<span className="font-medium">{recipients.length}</span>
-							<span className="text-sm text-muted-foreground">recipients</span>
+						<DropdownMenu>
+							<DropdownMenuTrigger asChild>
+								<Button variant="ghost" className="h-auto p-2 hover:bg-muted/50 focus-ring">
+									<div className="flex items-center gap-2">
+										<Users className="h-4 w-4 text-muted-foreground" />
+										<span className="font-medium">{recipients.length}</span>
+										<span className="text-sm text-muted-foreground">recipients</span>
+										<ChevronRight className="h-3 w-3 text-muted-foreground" />
+									</div>
+								</Button>
+							</DropdownMenuTrigger>
+							<DropdownMenuContent align="start" className="w-80 bg-card/95 backdrop-blur-md border-border/50">
+								<DropdownMenuLabel className="flex items-center gap-2">
+									<Mail className="h-4 w-4" />
+									Recipients ({recipients.length})
+								</DropdownMenuLabel>
+								<DropdownMenuSeparator />
+								<ScrollArea className="h-48 w-full">
+									<div className="space-y-1 pr-4">
+										{recipients.map((recipient, index) => (
+											<div
+												key={recipient.id}
+												className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50 transition-colors"
+											>
+												<div className="flex-1 min-w-0">
+													<div className="flex items-center gap-2">
+														<div className="w-2 h-2 rounded-full bg-primary/60 flex-shrink-0" />
+														<div className="flex-1 min-w-0">
+															<p className="text-sm font-medium text-foreground truncate">
+																{recipient.recipientName || recipient.recipientEmail}
+															</p>
+															{recipient.recipientName && (
+																<p className="text-xs text-muted-foreground truncate">
+																	{recipient.recipientEmail}
+																</p>
+															)}
+														</div>
+													</div>
+												</div>
+												<div className="flex items-center gap-2 ml-2">
+													<Badge
+														variant="outline"
+														className={`
+															text-xs px-2 py-1 h-auto
+															${recipient.status === 'DELIVERED'
+																? 'bg-success/10 text-success border-success/20'
+																: recipient.status === 'OPENED'
+																? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/20 dark:text-blue-300 dark:border-blue-800'
+																: recipient.status === 'BOUNCED'
+																? 'bg-destructive/10 text-destructive border-destructive/20'
+																: 'bg-muted/10 text-muted-foreground border-muted/20'
+															}
+														`}
+													>
+														{recipient.status.toLowerCase()}
+													</Badge>
+													{recipient.deliveredAt && (
+														<div className="text-xs text-muted-foreground">
+															{format(new Date(recipient.deliveredAt), "MMM d, h:mm a")}
+														</div>
+													)}
+												</div>
+											</div>
+										))}
+									</div>
+								</ScrollArea>
+							</DropdownMenuContent>
+						</DropdownMenu>
+					);
+				},
+			},
+			{
+				id: "delivery",
+				header: "Delivery Status",
+				cell: ({ row }) => {
+					const recipients = row.getValue("recipients") as Email["recipients"];
+
+					// Calculate delivery metrics
+					const totalRecipients = recipients.length;
+					const deliveredCount = recipients.filter(r => r.deliveredAt).length;
+					const openedCount = recipients.filter(r => r.openedAt).length;
+
+					if (totalRecipients === 0) {
+						return (
+							<div className="text-sm text-muted-foreground">
+								No recipients
+							</div>
+						);
+					}
+
+					return (
+						<div className="space-y-1">
+							<div className="flex items-center gap-2">
+								<Badge
+									variant="outline"
+									className="bg-success/10 text-success border-success/20 text-xs"
+								>
+									{deliveredCount}/{totalRecipients} Delivered
+								</Badge>
+							</div>
+							{openedCount > 0 && (
+								<div className="flex items-center gap-2">
+									<Badge
+										variant="outline"
+										className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/20 dark:text-blue-300 dark:border-blue-800 text-xs"
+									>
+										{openedCount}/{totalRecipients} Opened
+									</Badge>
+								</div>
+							)}
 						</div>
 					);
 				},
@@ -266,8 +386,8 @@ export function EmailsContent() {
 	);
 
 	const table = useReactTable({
-		data: data?.emails || [],
-		columns,
+		data: (data?.emails || []) as any[],
+		columns: columns as any,
 		onSortingChange: setSorting,
 		onColumnFiltersChange: setColumnFilters,
 		getCoreRowModel: getCoreRowModel(),
@@ -377,13 +497,13 @@ export function EmailsContent() {
 						<Mail className="h-8 w-8 text-muted-foreground" />
 					</div>
 					<h3 className="text-lg font-semibold mb-2">No emails found</h3>
-					<p className="text-muted-foreground mb-4">
+								<p className="text-muted-foreground mb-4">
 						Get started by creating your first email campaign
-					</p>
-					<Button onClick={() => router.push("/emails/new")}>
-						<Plus className="mr-2 h-4 w-4" />
-						Create Your First Email
-					</Button>
+								</p>
+								<Button onClick={() => router.push("/emails/new")}>
+									<Plus className="mr-2 h-4 w-4" />
+									Create Your First Email
+								</Button>
 				</div>
 			) : (
 				<div className="w-full">

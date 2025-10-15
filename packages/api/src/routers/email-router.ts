@@ -193,6 +193,8 @@ export const emailRouter = {
 								recipientEmail: true,
 								recipientName: true,
 								status: true,
+								deliveredAt: true,
+								openedAt: true,
 							},
 						},
 					},

@@ -137,7 +137,7 @@ export function CreateEmailContent() {
 			</div>
 
 			{activeTab === "single" ? (
-				<Form {...singleForm}>
+				<Form {...singleForm} key="single-form">
 					<form onSubmit={singleForm.handleSubmit(onSingleSubmit)} className="space-y-6">
 						<Card>
 							<CardHeader>
@@ -285,7 +285,7 @@ export function CreateEmailContent() {
 					</form>
 				</Form>
 			) : (
-				<Form {...bulkForm}>
+				<Form {...bulkForm} key="bulk-form">
 					<form onSubmit={bulkForm.handleSubmit(onBulkSubmit)} className="space-y-6">
 						<Card>
 							<CardHeader>
