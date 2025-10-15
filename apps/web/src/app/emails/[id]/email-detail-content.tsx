@@ -180,7 +180,17 @@ export function EmailDetailContent({ emailId }: EmailDetailContentProps) {
 						<div>
 							<span className="text-sm font-medium">Scheduled For:</span>
 							<p className="text-muted-foreground">
-								{format(new Date(email.scheduledFor), "MMMM d, yyyy 'at' h:mm a")}
+								{(() => {
+									// Format date without timezone conversion issues
+									const date = new Date(email.scheduledFor);
+									const year = date.getFullYear();
+									const month = date.getMonth();
+									const day = date.getDate();
+									const hours = date.getHours();
+									const minutes = date.getMinutes();
+									const localDate = new Date(year, month, day, hours, minutes);
+									return format(localDate, "MMMM d, yyyy 'at' h:mm a");
+								})()}
 							</p>
 						</div>
 						{email.sentAt && (

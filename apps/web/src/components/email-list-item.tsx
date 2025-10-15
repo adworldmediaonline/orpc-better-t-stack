@@ -37,6 +37,21 @@ export function EmailListItem({ email, onClick }: EmailListItemProps) {
 	const openRate =
 		deliveredCount > 0 ? Math.round((openedCount / deliveredCount) * 100) : 0;
 
+
+	// Helper function to format date without timezone conversion issues
+	const formatScheduledTime = (date: Date): string => {
+		// Get the local components directly to avoid timezone conversion
+		const year = date.getFullYear();
+		const month = date.getMonth();
+		const day = date.getDate();
+		const hours = date.getHours();
+		const minutes = date.getMinutes();
+
+		// Create a new date with the same local components
+		const localDate = new Date(year, month, day, hours, minutes);
+		return format(localDate, "MMM d, h:mm a");
+	};
+
 	return (
 		<Card
 			className="cursor-pointer hover:shadow-md transition-shadow"
@@ -52,8 +67,8 @@ export function EmailListItem({ email, onClick }: EmailListItemProps) {
 
 						<p className="text-sm text-muted-foreground mb-3">
 							{email.status === "SENT" && email.sentAt
-								? `Sent ${format(new Date(email.sentAt), "MMM d, h:mm a")}`
-								: `Scheduled for ${format(new Date(email.scheduledFor), "MMM d, h:mm a")}`}
+								? `Sent ${formatScheduledTime(new Date(email.sentAt))}`
+								: `Scheduled for ${formatScheduledTime(new Date(email.scheduledFor))}`}
 						</p>
 
 						<div className="flex flex-wrap gap-4 text-sm">
