@@ -1,6 +1,27 @@
 import cron from "node-cron";
 import { processScheduledEmails } from "@orpc-better-t-stack/email-service";
 
+/**
+ * Cron Manager for Email Scheduling
+ *
+ * IMPORTANT NOTES:
+ *
+ * 1. LOCAL DEVELOPMENT:
+ *    - Set ENABLE_CRON=true in your .env file
+ *    - This will start a local cron job that runs every minute
+ *    - Perfect for development and testing
+ *
+ * 2. PRODUCTION (VERCEL):
+ *    - node-cron DOES NOT WORK on Vercel (serverless)
+ *    - Vercel uses their own cron system defined in vercel.json
+ *    - The /api/cron endpoint is called automatically by Vercel
+ *    - ENABLE_CRON is ignored on Vercel
+ *
+ * 3. MANUAL TESTING:
+ *    - Call GET /api/cron to manually trigger email processing
+ *    - Add ?auth=your-cron-secret for authentication (optional)
+ */
+
 const ENABLE_CRON = process.env.ENABLE_CRON === "true";
 
 class CronManager {
