@@ -11,32 +11,72 @@ import { Button } from "@/components/ui/button";
 import { CsvUploader } from "@/components/csv-uploader";
 import { toast } from "sonner";
 import { Send, Loader2 } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import {
+	Form,
+	FormControl,
+	FormField,
+	FormItem,
+	FormLabel,
+	FormMessage,
+} from "@/components/ui/form";
+import { Textarea } from "@/components/ui/textarea";
+
+// Form schemas
+const singleEmailSchema = z.object({
+	subject: z.string().min(1, "Subject is required").max(255, "Subject must be 255 characters or less"),
+	recipientEmail: z.string().email("Invalid email address"),
+	recipientName: z.string().optional(),
+	htmlBody: z.string().min(1, "Email body is required"),
+	textBody: z.string().optional(),
+	scheduledFor: z.string().optional(),
+});
+
+const bulkEmailSchema = z.object({
+	subject: z.string().min(1, "Subject is required").max(255, "Subject must be 255 characters or less"),
+	htmlBody: z.string().min(1, "Email body is required"),
+	textBody: z.string().optional(),
+	scheduledFor: z.string().optional(),
+	csvData: z.string().min(1, "CSV file is required"),
+});
+
+type SingleEmailForm = z.infer<typeof singleEmailSchema>;
+type BulkEmailForm = z.infer<typeof bulkEmailSchema>;
 
 export function CreateEmailContent() {
 	const router = useRouter();
 	const [activeTab, setActiveTab] = useState<"single" | "bulk">("single");
 
-	const [singleForm, setSingleForm] = useState({
-		subject: "",
-		recipientEmail: "",
-		recipientName: "",
-		htmlBody: "",
-		textBody: "",
-		scheduledFor: "",
+	// Single email form
+	const singleForm = useForm<SingleEmailForm>({
+		resolver: zodResolver(singleEmailSchema),
+		defaultValues: {
+			subject: "",
+			recipientEmail: "",
+			recipientName: "",
+			htmlBody: "",
+			textBody: "",
+			scheduledFor: "",
+		},
 	});
 
-	const [bulkForm, setBulkForm] = useState({
-		subject: "",
-		htmlBody: "",
-		textBody: "",
-		scheduledFor: "",
-		csvData: "",
-		csvFileName: "",
+	// Bulk email form
+	const bulkForm = useForm<BulkEmailForm>({
+		resolver: zodResolver(bulkEmailSchema),
+		defaultValues: {
+			subject: "",
+			htmlBody: "",
+			textBody: "",
+			scheduledFor: "",
+			csvData: "",
+		},
 	});
 
 	const createSingleMutation = useMutation({
-		mutationFn: async () => {
-			return await client.emails.createEmail(singleForm);
+		mutationFn: async (data: SingleEmailForm) => {
+			return await client.emails.createEmail(data);
 		},
 		onSuccess: () => {
 			toast.success("Email scheduled successfully!");
@@ -48,14 +88,8 @@ export function CreateEmailContent() {
 	});
 
 	const createBulkMutation = useMutation({
-		mutationFn: async () => {
-			return await client.emails.createBulkEmail({
-				subject: bulkForm.subject,
-				htmlBody: bulkForm.htmlBody,
-				textBody: bulkForm.textBody,
-				scheduledFor: bulkForm.scheduledFor,
-				csvData: bulkForm.csvData,
-			});
+		mutationFn: async (data: BulkEmailForm) => {
+			return await client.emails.createBulkEmail(data);
 		},
 		onSuccess: (data) => {
 			toast.success(
@@ -68,18 +102,12 @@ export function CreateEmailContent() {
 		},
 	});
 
-	const handleSingleSubmit = (e: React.FormEvent) => {
-		e.preventDefault();
-		createSingleMutation.mutate();
+	const onSingleSubmit = (data: SingleEmailForm) => {
+		createSingleMutation.mutate(data);
 	};
 
-	const handleBulkSubmit = (e: React.FormEvent) => {
-		e.preventDefault();
-		if (!bulkForm.csvData) {
-			toast.error("Please upload a CSV file");
-			return;
-		}
-		createBulkMutation.mutate();
+	const onBulkSubmit = (data: BulkEmailForm) => {
+		createBulkMutation.mutate(data);
 	};
 
 	return (
@@ -108,236 +136,268 @@ export function CreateEmailContent() {
 			</div>
 
 			{activeTab === "single" ? (
-				<form onSubmit={handleSingleSubmit} className="space-y-6">
-					<Card>
-						<CardHeader>
-							<CardTitle>Email Details</CardTitle>
-						</CardHeader>
-						<CardContent className="space-y-4">
-							<div>
-								<Label htmlFor="subject">Subject *</Label>
-								<Input
-									id="subject"
-									value={singleForm.subject}
-									onChange={(e) =>
-										setSingleForm({ ...singleForm, subject: e.target.value })
-									}
-									maxLength={255}
-									required
+				<Form {...singleForm}>
+					<form onSubmit={singleForm.handleSubmit(onSingleSubmit)} className="space-y-6">
+						<Card>
+							<CardHeader>
+								<CardTitle>Email Details</CardTitle>
+							</CardHeader>
+							<CardContent className="space-y-4">
+								<FormField
+									control={singleForm.control}
+									name="subject"
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel>Subject *</FormLabel>
+											<FormControl>
+												<Input placeholder="Enter email subject" {...field} />
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
 								/>
-							</div>
 
-							<div className="grid grid-cols-2 gap-4">
-								<div>
-									<Label htmlFor="recipientEmail">Recipient Email *</Label>
-									<Input
-										id="recipientEmail"
-										type="email"
-										value={singleForm.recipientEmail}
-										onChange={(e) =>
-											setSingleForm({
-												...singleForm,
-												recipientEmail: e.target.value,
-											})
-										}
-										required
+								<div className="grid grid-cols-2 gap-4">
+									<FormField
+										control={singleForm.control}
+										name="recipientEmail"
+										render={({ field }) => (
+											<FormItem>
+												<FormLabel>Recipient Email *</FormLabel>
+												<FormControl>
+													<Input type="email" placeholder="recipient@example.com" {...field} />
+												</FormControl>
+												<FormMessage />
+											</FormItem>
+										)}
+									/>
+									<FormField
+										control={singleForm.control}
+										name="recipientName"
+										render={({ field }) => (
+											<FormItem>
+												<FormLabel>Recipient Name</FormLabel>
+												<FormControl>
+													<Input placeholder="John Doe" {...field} />
+												</FormControl>
+												<FormMessage />
+											</FormItem>
+										)}
 									/>
 								</div>
-								<div>
-									<Label htmlFor="recipientName">Recipient Name</Label>
-									<Input
-										id="recipientName"
-										value={singleForm.recipientName}
-										onChange={(e) =>
-											setSingleForm({
-												...singleForm,
-												recipientName: e.target.value,
-											})
-										}
-									/>
-								</div>
-							</div>
 
-							<div>
-								<Label htmlFor="htmlBody">Email Body (HTML) *</Label>
-								<textarea
-									id="htmlBody"
-									value={singleForm.htmlBody}
-									onChange={(e) =>
-										setSingleForm({ ...singleForm, htmlBody: e.target.value })
-									}
-									className="w-full min-h-[200px] p-3 border rounded-md"
-									required
+								<FormField
+									control={singleForm.control}
+									name="htmlBody"
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel>Email Body (HTML) *</FormLabel>
+											<FormControl>
+												<Textarea
+													placeholder="Enter your email content..."
+													className="min-h-[200px]"
+													{...field}
+												/>
+											</FormControl>
+											<p className="text-xs text-muted-foreground">
+												You can use HTML tags for formatting
+											</p>
+											<FormMessage />
+										</FormItem>
+									)}
 								/>
-								<p className="text-xs text-muted-foreground mt-1">
-									You can use HTML tags for formatting
-								</p>
-							</div>
 
-							<div>
-								<Label htmlFor="textBody">Plain Text Version</Label>
-								<textarea
-									id="textBody"
-									value={singleForm.textBody}
-									onChange={(e) =>
-										setSingleForm({ ...singleForm, textBody: e.target.value })
-									}
-									className="w-full min-h-[100px] p-3 border rounded-md"
+								<FormField
+									control={singleForm.control}
+									name="textBody"
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel>Plain Text Version</FormLabel>
+											<FormControl>
+												<Textarea
+													placeholder="Plain text version..."
+													className="min-h-[100px]"
+													{...field}
+												/>
+											</FormControl>
+											<p className="text-xs text-muted-foreground">
+												Optional fallback for email clients that don't support HTML
+											</p>
+											<FormMessage />
+										</FormItem>
+									)}
 								/>
-								<p className="text-xs text-muted-foreground mt-1">
-									Optional fallback for email clients that don't support HTML
-								</p>
-							</div>
 
-							<div>
-								<Label htmlFor="scheduledFor">Schedule For</Label>
-								<Input
-									id="scheduledFor"
-									type="datetime-local"
-									value={singleForm.scheduledFor}
-									onChange={(e) =>
-										setSingleForm({
-											...singleForm,
-											scheduledFor: e.target.value,
-										})
-									}
+								<FormField
+									control={singleForm.control}
+									name="scheduledFor"
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel>Schedule For</FormLabel>
+											<FormControl>
+												<Input type="datetime-local" {...field} />
+											</FormControl>
+											<p className="text-xs text-muted-foreground">
+												Leave empty to send immediately
+											</p>
+											<FormMessage />
+										</FormItem>
+									)}
 								/>
-								<p className="text-xs text-muted-foreground mt-1">
-									Leave empty to send immediately
-								</p>
-							</div>
-						</CardContent>
-					</Card>
+							</CardContent>
+						</Card>
 
-					<div className="flex justify-end gap-3">
-						<Button
-							type="button"
-							variant="outline"
-							onClick={() => router.back()}
-						>
-							Cancel
-						</Button>
-						<Button
-							type="submit"
-							disabled={createSingleMutation.isPending}
-						>
-							{createSingleMutation.isPending ? (
-								<>
-									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-									Scheduling...
-								</>
-							) : (
-								<>
-									<Send className="mr-2 h-4 w-4" />
-									Schedule Email
-								</>
-							)}
-						</Button>
-					</div>
-				</form>
-			) : (
-				<form onSubmit={handleBulkSubmit} className="space-y-6">
-					<Card>
-						<CardHeader>
-							<CardTitle>Bulk Email Details</CardTitle>
-						</CardHeader>
-						<CardContent className="space-y-4">
-							<div>
-								<Label htmlFor="bulk-subject">Subject *</Label>
-								<Input
-									id="bulk-subject"
-									value={bulkForm.subject}
-									onChange={(e) =>
-										setBulkForm({ ...bulkForm, subject: e.target.value })
-									}
-									maxLength={255}
-									required
-								/>
-							</div>
-
-							<div>
-								<Label htmlFor="bulk-htmlBody">Email Body (HTML) *</Label>
-								<textarea
-									id="bulk-htmlBody"
-									value={bulkForm.htmlBody}
-									onChange={(e) =>
-										setBulkForm({ ...bulkForm, htmlBody: e.target.value })
-									}
-									className="w-full min-h-[200px] p-3 border rounded-md"
-									required
-								/>
-							</div>
-
-							<div>
-								<Label htmlFor="bulk-textBody">Plain Text Version</Label>
-								<textarea
-									id="bulk-textBody"
-									value={bulkForm.textBody}
-									onChange={(e) =>
-										setBulkForm({ ...bulkForm, textBody: e.target.value })
-									}
-									className="w-full min-h-[100px] p-3 border rounded-md"
-								/>
-							</div>
-
-							<div>
-								<Label htmlFor="bulk-scheduledFor">Schedule For</Label>
-								<Input
-									id="bulk-scheduledFor"
-									type="datetime-local"
-									value={bulkForm.scheduledFor}
-									onChange={(e) =>
-										setBulkForm({ ...bulkForm, scheduledFor: e.target.value })
-									}
-								/>
-								<p className="text-xs text-muted-foreground mt-1">
-									Leave empty to send immediately
-								</p>
-							</div>
-						</CardContent>
-					</Card>
-
-					<div>
-						<Label>Recipients CSV File *</Label>
-						<div className="mt-2">
-							<CsvUploader
-								onFileSelect={(content) =>
-									setBulkForm({ ...bulkForm, csvData: content, csvFileName: "recipients.csv" })
-								}
-								onClear={() =>
-									setBulkForm({ ...bulkForm, csvData: "", csvFileName: "" })
-								}
-								fileName={bulkForm.csvFileName}
-							/>
+						<div className="flex justify-end gap-3">
+							<Button
+								type="button"
+								variant="outline"
+								onClick={() => router.back()}
+							>
+								Cancel
+							</Button>
+							<Button
+								type="submit"
+								disabled={createSingleMutation.isPending}
+							>
+								{createSingleMutation.isPending ? (
+									<>
+										<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+										Scheduling...
+									</>
+								) : (
+									<>
+										<Send className="mr-2 h-4 w-4" />
+										Schedule Email
+									</>
+								)}
+							</Button>
 						</div>
-					</div>
+					</form>
+				</Form>
+			) : (
+				<Form {...bulkForm}>
+					<form onSubmit={bulkForm.handleSubmit(onBulkSubmit)} className="space-y-6">
+						<Card>
+							<CardHeader>
+								<CardTitle>Bulk Email Details</CardTitle>
+							</CardHeader>
+							<CardContent className="space-y-4">
+								<FormField
+									control={bulkForm.control}
+									name="subject"
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel>Subject *</FormLabel>
+											<FormControl>
+												<Input placeholder="Enter email subject" {...field} />
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
 
-					<div className="flex justify-end gap-3">
-						<Button
-							type="button"
-							variant="outline"
-							onClick={() => router.back()}
-						>
-							Cancel
-						</Button>
-						<Button
-							type="submit"
-							disabled={createBulkMutation.isPending}
-						>
-							{createBulkMutation.isPending ? (
-								<>
-									<Loader2 className="mr-2 h-4 w-4 animate-spin" />
-									Scheduling...
-								</>
-							) : (
-								<>
-									<Send className="mr-2 h-4 w-4" />
-									Schedule Bulk Email
-								</>
+								<FormField
+									control={bulkForm.control}
+									name="htmlBody"
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel>Email Body (HTML) *</FormLabel>
+											<FormControl>
+												<Textarea
+													placeholder="Enter your email content..."
+													className="min-h-[200px]"
+													{...field}
+												/>
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+
+								<FormField
+									control={bulkForm.control}
+									name="textBody"
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel>Plain Text Version</FormLabel>
+											<FormControl>
+												<Textarea
+													placeholder="Plain text version..."
+													className="min-h-[100px]"
+													{...field}
+												/>
+											</FormControl>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+
+								<FormField
+									control={bulkForm.control}
+									name="scheduledFor"
+									render={({ field }) => (
+										<FormItem>
+											<FormLabel>Schedule For</FormLabel>
+											<FormControl>
+												<Input type="datetime-local" {...field} />
+											</FormControl>
+											<p className="text-xs text-muted-foreground">
+												Leave empty to send immediately
+											</p>
+											<FormMessage />
+										</FormItem>
+									)}
+								/>
+							</CardContent>
+						</Card>
+
+						<FormField
+							control={bulkForm.control}
+							name="csvData"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>Recipients CSV File *</FormLabel>
+									<FormControl>
+										<CsvUploader
+											onFileSelect={(content) => {
+												field.onChange(content);
+											}}
+											onClear={() => field.onChange("")}
+											fileName={field.value ? "recipients.csv" : ""}
+										/>
+									</FormControl>
+									<FormMessage />
+								</FormItem>
 							)}
-						</Button>
-					</div>
-				</form>
+						/>
+
+						<div className="flex justify-end gap-3">
+							<Button
+								type="button"
+								variant="outline"
+								onClick={() => router.back()}
+							>
+								Cancel
+							</Button>
+							<Button
+								type="submit"
+								disabled={createBulkMutation.isPending}
+							>
+								{createBulkMutation.isPending ? (
+									<>
+										<Loader2 className="mr-2 h-4 w-4 animate-spin" />
+										Scheduling...
+									</>
+								) : (
+									<>
+										<Send className="mr-2 h-4 w-4" />
+										Schedule Bulk Email
+									</>
+								)}
+							</Button>
+						</div>
+					</form>
+				</Form>
 			)}
 		</div>
 	);

@@ -21,16 +21,24 @@ export function EmailsContent() {
 
 	const statusFilter: EmailStatus | undefined = activeTab === "all" ? undefined : activeTab;
 
-	const queryParams = {
+	// Build query params without undefined values
+	const queryParams: any = {
 		page,
 		limit: 20,
-		...(statusFilter && { status: statusFilter }),
-		...(search && { search }),
 	};
 
-	const { data, isLoading, error } = useQuery(
-		orpc.emails.getEmails.queryOptions(queryParams)
-	);
+	if (statusFilter) {
+		queryParams.status = statusFilter;
+	}
+
+	if (search && search.trim()) {
+		queryParams.search = search.trim();
+	}
+
+	const { data, isLoading, error } = useQuery({
+		...orpc.emails.getEmails.queryOptions(queryParams),
+		queryKey: ["emails", page, statusFilter, search] as const,
+	});
 
 	const tabs = [
 		{ key: "all" as const, label: "All Emails" },
