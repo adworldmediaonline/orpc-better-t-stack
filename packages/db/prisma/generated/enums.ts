@@ -8,7 +8,35 @@
 * 🟢 You can import this file directly.
 */
 
+export const EmailStatus = {
+  SCHEDULED: 'SCHEDULED',
+  SENDING: 'SENDING',
+  SENT: 'SENT',
+  FAILED: 'FAILED',
+  CANCELLED: 'CANCELLED'
+} as const
+
+export type EmailStatus = (typeof EmailStatus)[keyof typeof EmailStatus]
 
 
-// This file is empty because there are no enums in the schema.
-export {}
+export const RecipientStatus = {
+  PENDING: 'PENDING',
+  DELIVERED: 'DELIVERED',
+  OPENED: 'OPENED',
+  CLICKED: 'CLICKED',
+  BOUNCED: 'BOUNCED',
+  COMPLAINED: 'COMPLAINED'
+} as const
+
+export type RecipientStatus = (typeof RecipientStatus)[keyof typeof RecipientStatus]
+
+
+export const EmailEventType = {
+  DELIVERED: 'DELIVERED',
+  OPENED: 'OPENED',
+  CLICKED: 'CLICKED',
+  BOUNCED: 'BOUNCED',
+  COMPLAINED: 'COMPLAINED'
+} as const
+
+export type EmailEventType = (typeof EmailEventType)[keyof typeof EmailEventType]
