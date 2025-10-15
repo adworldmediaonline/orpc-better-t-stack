@@ -29,8 +29,6 @@ export function DateTimePicker({
 }: DateTimePickerProps) {
 	// Parse the datetime-local string directly without Date conversions
 	const parseDateTimeLocal = (datetimeString: string) => {
-		console.log("🔍 DateTimePicker parseDateTimeLocal - Input:", datetimeString);
-
 		if (!datetimeString) return { date: undefined, time: "" };
 
 		const [datePart, timePart] = datetimeString.split('T');
@@ -43,14 +41,6 @@ export function DateTimePicker({
 		const date = new Date(year, month - 1, day);
 		const time = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
 
-		console.log("🔍 DateTimePicker parseDateTimeLocal - Parsed:", {
-			datetimeString,
-			datePart, timePart,
-			year, month, day, hours, minutes,
-			date: date.toString(),
-			time
-		});
-
 		return { date, time };
 	};
 
@@ -58,14 +48,6 @@ export function DateTimePicker({
 	const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(date);
 	const [selectedTime, setSelectedTime] = React.useState<string>(time);
 
-	// Log component initialization
-	console.log("🔍 DateTimePicker INITIALIZATION:", {
-		value,
-		parsedDate: date?.toString(),
-		parsedTime: time,
-		selectedDate: selectedDate?.toString(),
-		selectedTime
-	});
 
 	const handleDateSelect = (selectedDate: Date | undefined) => {
 		if (!selectedDate) {
@@ -89,14 +71,6 @@ export function DateTimePicker({
 			const minute = String(minutes).padStart(2, '0');
 			const datetimeString = `${year}-${month}-${day}T${hour}:${minute}`;
 
-			console.log("🔍 DateTimePicker SIMPLE - Date selected with existing time:", {
-				selectedDate: selectedDate.toString(),
-				selectedTime,
-				datetimeString,
-				year, month, day, hour, minute,
-			});
-
-			console.log("🔍 DateTimePicker CALLING onChange with:", datetimeString);
 			onChange?.(datetimeString);
 		} else {
 			// Set default time to current time if no time is selected
@@ -112,15 +86,6 @@ export function DateTimePicker({
 			const minute = String(now.getMinutes()).padStart(2, '0');
 			const datetimeString = `${year}-${month}-${day}T${hour}:${minute}`;
 
-			console.log("🔍 DateTimePicker SIMPLE - Date selected with default time:", {
-				selectedDate: selectedDate.toString(),
-				now: now.toString(),
-				timeString,
-				datetimeString,
-				year, month, day, hour, minute,
-			});
-
-			console.log("🔍 DateTimePicker CALLING onChange with:", datetimeString);
 			onChange?.(datetimeString);
 		}
 	};
@@ -142,13 +107,6 @@ export function DateTimePicker({
 		const minute = String(minutes).padStart(2, '0');
 		const datetimeString = `${year}-${month}-${day}T${hour}:${minute}`;
 
-		console.log("🔍 DateTimePicker SIMPLE - Time changed:", {
-			timeValue,
-			datetimeString,
-			year, month, day, hour, minute,
-		});
-
-		console.log("🔍 DateTimePicker CALLING onChange with:", datetimeString);
 		onChange?.(datetimeString);
 	};
 

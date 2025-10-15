@@ -38,36 +38,10 @@ export function EmailListItem({ email, onClick }: EmailListItemProps) {
 		deliveredCount > 0 ? Math.round((openedCount / deliveredCount) * 100) : 0;
 
 
-	// Debug: Log the scheduledFor value received from API
-	console.log("🔍 EmailListItem DEBUG:", {
-		subject: email.subject,
-		scheduledFor: email.scheduledFor,
-		scheduledForType: typeof email.scheduledFor,
-		scheduledForString: email.scheduledFor.toString(),
-		scheduledForISO: email.scheduledFor.toISOString(),
-		formattedDisplay: format(new Date(email.scheduledFor), "MMM d, h:mm a"),
-	});
 
-	// SIMPLE function to format date - NO CONVERSIONS
+	// Format date for display
 	const formatScheduledTime = (date: Date): string => {
-		console.log("🔍 formatScheduledTime SIMPLE DEBUG:", {
-			inputDate: date.toString(),
-			inputISO: date.toISOString(),
-			year: date.getFullYear(),
-			month: date.getMonth(),
-			day: date.getDate(),
-			hours: date.getHours(),
-			minutes: date.getMinutes(),
-		});
-
-		// Use the date directly - no conversions, no modifications
-		const result = format(date, "MMM d, h:mm a");
-
-		console.log("🔍 formatScheduledTime SIMPLE RESULT:", {
-			result,
-		});
-
-		return result;
+		return format(date, "MMM d, h:mm a");
 	};
 
 	return (

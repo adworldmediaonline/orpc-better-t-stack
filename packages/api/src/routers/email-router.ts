@@ -2,7 +2,6 @@ import { z } from "zod";
 import { protectedProcedure } from "../index";
 import prisma from "@orpc-better-t-stack/db";
 import { processBulkCsv, retryFailedEmail } from "@orpc-better-t-stack/email-service";
-import { format } from "date-fns";
 
 const createEmailSchema = z.object({
 	subject: z.string().min(1, "Subject is required").max(255, "Subject must be 255 characters or less"),
@@ -52,8 +51,6 @@ const getStatsSchema = z
 
 // Simple function to store exact time selected - NO CONVERSIONS
 function storeExactTime(datetimeLocalString: string): Date {
-	console.log("🔍 storeExactTime - Input:", datetimeLocalString);
-
 	// datetime-local format: "YYYY-MM-DDTHH:mm"
 	// Parse the components exactly as provided
 	const [datePart, timePart] = datetimeLocalString.split('T');
@@ -71,13 +68,9 @@ function storeExactTime(datetimeLocalString: string): Date {
 		throw new Error("Invalid datetime components");
 	}
 
-	// Create date with EXACT components - no timezone conversion
-	// This will store the exact time you selected
-	const exactDate = new Date(year, month - 1, day, hours, minutes);
-
-	console.log("🔍 storeExactTime - EXACT components:", { year, month, day, hours, minutes });
-	console.log("🔍 storeExactTime - EXACT date:", exactDate.toString());
-	console.log("🔍 storeExactTime - EXACT ISO:", exactDate.toISOString());
+	// Create UTC date to preserve exact time selected by user
+	// This ensures the time is stored exactly as selected regardless of server timezone
+	const exactDate = new Date(Date.UTC(year, month - 1, day, hours, minutes));
 
 	return exactDate;
 }
@@ -89,33 +82,15 @@ export const emailRouter = {
 		.handler(async ({ context, input }) => {
 			// Handle datetime-local input properly
 			let scheduledFor = new Date();
-			const currentTime = new Date();
 
-			console.log("🕐 CURRENT TIME DEBUG:");
-			console.log("  - Current time:", currentTime.toString());
-			console.log("  - Current time ISO:", currentTime.toISOString());
-			console.log("  - Current time getTime():", currentTime.getTime());
-			console.log("  - Timezone offset (minutes):", currentTime.getTimezoneOffset());
 
 			if (input.scheduledFor) {
-				console.log("📅 SCHEDULED DATE DEBUG:");
-				console.log("  - Input scheduledFor:", input.scheduledFor);
-
 				try {
 					scheduledFor = storeExactTime(input.scheduledFor);
-
-					console.log("  - FINAL scheduledFor:", scheduledFor.toString());
-					console.log("  - FINAL scheduledFor ISO:", scheduledFor.toISOString());
-					console.log("  - FINAL scheduledFor getTime():", scheduledFor.getTime());
-					console.log("  - Time difference (ms):", scheduledFor.getTime() - currentTime.getTime());
-					console.log("  - Time difference (hours):", (scheduledFor.getTime() - currentTime.getTime()) / (1000 * 60 * 60));
-					console.log("  - Formatted display:", format(scheduledFor, "PPP 'at' p"));
 				} catch (error) {
 					console.error("❌ Date parsing error:", error);
 					throw new Error(`Invalid datetime format: ${input.scheduledFor}`);
 				}
-			} else {
-				console.log("📅 SCHEDULED DATE DEBUG: No scheduled time provided, using current time");
 			}
 
 			const email = await prisma.email.create({
@@ -229,16 +204,6 @@ export const emailRouter = {
 			]);
 
 
-			// Debug: Log the scheduledFor values being returned
-			console.log("🔍 getEmails - Returning emails with scheduledFor values:");
-			emails.forEach((email, index) => {
-				console.log(`  Email ${index + 1} (${email.subject}):`, {
-					scheduledFor: email.scheduledFor,
-					scheduledForType: typeof email.scheduledFor,
-					scheduledForString: email.scheduledFor.toString(),
-					scheduledForISO: email.scheduledFor.toISOString(),
-				});
-			});
 
 			return {
 				emails,
