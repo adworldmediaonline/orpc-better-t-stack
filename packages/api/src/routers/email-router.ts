@@ -2,6 +2,7 @@ import { z } from "zod";
 import { protectedProcedure } from "../index";
 import prisma from "@orpc-better-t-stack/db";
 import { processBulkCsv, retryFailedEmail } from "@orpc-better-t-stack/email-service";
+import { parseISO, format, isValid } from "date-fns";
 
 const createEmailSchema = z.object({
 	subject: z.string().min(1, "Subject is required").max(255, "Subject must be 255 characters or less"),
@@ -54,24 +55,44 @@ export const emailRouter = {
 		.handler(async ({ context, input }) => {
 			// Handle datetime-local input properly
 			let scheduledFor = new Date();
+			const currentTime = new Date();
+
+			console.log("🕐 CURRENT TIME DEBUG:");
+			console.log("  - Current time:", currentTime.toString());
+			console.log("  - Current time ISO:", currentTime.toISOString());
+			console.log("  - Current time getTime():", currentTime.getTime());
+			console.log("  - Timezone offset (minutes):", currentTime.getTimezoneOffset());
+
 			if (input.scheduledFor) {
-				console.log("🔍 DEBUG - Input scheduledFor:", input.scheduledFor);
+				console.log("📅 SCHEDULED DATE DEBUG:");
+				console.log("  - Input scheduledFor:", input.scheduledFor);
 
 				// datetime-local gives us "YYYY-MM-DDTHH:mm" in local time
-				// Parse it correctly as local time to avoid timezone conversion
-				const [datePart, timePart] = input.scheduledFor.split('T');
-				const [year, month, day] = datePart.split('-').map(Number);
-				const [hours, minutes] = timePart.split(':').map(Number);
+				// Use date-fns parseISO to parse the datetime string properly
+				try {
+					// Convert datetime-local format to ISO format for parsing
+					const isoString = input.scheduledFor.includes('Z')
+						? input.scheduledFor
+						: `${input.scheduledFor}:00`; // Add seconds if missing
 
-				console.log("🔍 DEBUG - Parsed:", { year, month, day, hours, minutes });
+					scheduledFor = parseISO(isoString);
 
-				// Create date object in local timezone - this preserves the local time
-				// The Date constructor with individual parameters creates a date in local timezone
-				scheduledFor = new Date(year, month - 1, day, hours, minutes);
+					if (!isValid(scheduledFor)) {
+						throw new Error("Invalid date format");
+					}
 
-				console.log("🔍 DEBUG - Final scheduledFor:", scheduledFor);
-				console.log("🔍 DEBUG - scheduledFor.toISOString():", scheduledFor.toISOString());
-				console.log("🔍 DEBUG - scheduledFor.getTime():", scheduledFor.getTime());
+					console.log("  - Parsed with date-fns parseISO:", scheduledFor.toString());
+					console.log("  - scheduledFor ISO:", scheduledFor.toISOString());
+					console.log("  - scheduledFor getTime():", scheduledFor.getTime());
+					console.log("  - Time difference (ms):", scheduledFor.getTime() - currentTime.getTime());
+					console.log("  - Time difference (hours):", (scheduledFor.getTime() - currentTime.getTime()) / (1000 * 60 * 60));
+					console.log("  - Formatted display:", format(scheduledFor, "PPP 'at' p"));
+				} catch (error) {
+					console.error("❌ Date parsing error:", error);
+					throw new Error(`Invalid datetime format: ${input.scheduledFor}`);
+				}
+			} else {
+				console.log("📅 SCHEDULED DATE DEBUG: No scheduled time provided, using current time");
 			}
 
 			const email = await prisma.email.create({
@@ -110,13 +131,22 @@ export const emailRouter = {
 			let scheduledFor = new Date();
 			if (input.scheduledFor) {
 				// datetime-local gives us "YYYY-MM-DDTHH:mm" in local time
-				// Parse it correctly as local time to avoid timezone conversion
-				const [datePart, timePart] = input.scheduledFor.split('T');
-				const [year, month, day] = datePart.split('-').map(Number);
-				const [hours, minutes] = timePart.split(':').map(Number);
+				// Use date-fns parseISO to parse the datetime string properly
+				try {
+					// Convert datetime-local format to ISO format for parsing
+					const isoString = input.scheduledFor.includes('Z')
+						? input.scheduledFor
+						: `${input.scheduledFor}:00`; // Add seconds if missing
 
-				// Create date object in local timezone - this preserves the local time
-				scheduledFor = new Date(year, month - 1, day, hours, minutes);
+					scheduledFor = parseISO(isoString);
+
+					if (!isValid(scheduledFor)) {
+						throw new Error("Invalid date format");
+					}
+				} catch (error) {
+					console.error("❌ Bulk email date parsing error:", error);
+					throw new Error(`Invalid datetime format: ${input.scheduledFor}`);
+				}
 			}
 
 			const email = await prisma.email.create({
@@ -247,13 +277,22 @@ export const emailRouter = {
 			let scheduledFor = undefined;
 			if (input.scheduledFor) {
 				// datetime-local gives us "YYYY-MM-DDTHH:mm" in local time
-				// Parse it correctly as local time to avoid timezone conversion
-				const [datePart, timePart] = input.scheduledFor.split('T');
-				const [year, month, day] = datePart.split('-').map(Number);
-				const [hours, minutes] = timePart.split(':').map(Number);
+				// Use date-fns parseISO to parse the datetime string properly
+				try {
+					// Convert datetime-local format to ISO format for parsing
+					const isoString = input.scheduledFor.includes('Z')
+						? input.scheduledFor
+						: `${input.scheduledFor}:00`; // Add seconds if missing
 
-				// Create date object in local timezone - this preserves the local time
-				scheduledFor = new Date(year, month - 1, day, hours, minutes);
+					scheduledFor = parseISO(isoString);
+
+					if (!isValid(scheduledFor)) {
+						throw new Error("Invalid date format");
+					}
+				} catch (error) {
+					console.error("❌ Update email date parsing error:", error);
+					throw new Error(`Invalid datetime format: ${input.scheduledFor}`);
+				}
 			}
 
 			const email = await prisma.email.update({
@@ -338,15 +377,15 @@ export const emailRouter = {
 				}),
 			]);
 
-			const recipientStatusCounts = recipientStats.reduce((acc, stat) => {
+			const recipientStatusCounts = recipientStats.reduce((acc: Record<string, number>, stat: any) => {
 				acc[stat.status] = stat._count;
 				return acc;
 			}, {} as Record<string, number>);
 
-			const totalRecipients = Object.values(recipientStatusCounts).reduce((sum, count) => sum + count, 0);
-			const deliveredCount = recipientStatusCounts.DELIVERED || 0;
-			const openedCount = recipientStatusCounts.OPENED || 0;
-			const bouncedCount = recipientStatusCounts.BOUNCED || 0;
+			const totalRecipients: number = (Object.values(recipientStatusCounts) as number[]).reduce((sum: number, count: number) => sum + count, 0);
+			const deliveredCount: number = (recipientStatusCounts as any).DELIVERED || 0;
+			const openedCount: number = (recipientStatusCounts as any).OPENED || 0;
+			const bouncedCount: number = (recipientStatusCounts as any).BOUNCED || 0;
 
 			return {
 				totalEmails,
