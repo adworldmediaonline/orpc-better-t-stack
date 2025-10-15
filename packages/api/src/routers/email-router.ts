@@ -58,9 +58,6 @@ export const emailRouter = {
 				// datetime-local gives us "YYYY-MM-DDTHH:mm" in local time
 				// Create date object treating it as local time
 				scheduledFor = new Date(input.scheduledFor);
-				console.log("Input scheduledFor:", input.scheduledFor);
-				console.log("Parsed scheduledFor:", scheduledFor);
-				console.log("ISO string:", scheduledFor.toISOString());
 			}
 
 			const email = await prisma.email.create({

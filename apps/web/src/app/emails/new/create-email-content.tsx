@@ -23,6 +23,7 @@ import {
 	FormMessage,
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
+import { DateTimePicker } from "@/components/ui/datetime-picker";
 
 // Form schemas
 const singleEmailSchema = z.object({
@@ -235,7 +236,11 @@ export function CreateEmailContent() {
 										<FormItem>
 											<FormLabel>Schedule For</FormLabel>
 											<FormControl>
-												<Input type="datetime-local" {...field} />
+												<DateTimePicker
+													value={field.value}
+													onChange={field.onChange}
+													placeholder="Select date and time"
+												/>
 											</FormControl>
 											<p className="text-xs text-muted-foreground">
 												Leave empty to send immediately
@@ -339,7 +344,11 @@ export function CreateEmailContent() {
 										<FormItem>
 											<FormLabel>Schedule For</FormLabel>
 											<FormControl>
-												<Input type="datetime-local" {...field} />
+												<DateTimePicker
+													value={field.value}
+													onChange={field.onChange}
+													placeholder="Select date and time"
+												/>
 											</FormControl>
 											<p className="text-xs text-muted-foreground">
 												Leave empty to send immediately
