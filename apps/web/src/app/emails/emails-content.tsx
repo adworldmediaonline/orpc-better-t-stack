@@ -305,10 +305,8 @@ export function EmailsContent() {
 	return (
 		<div className="space-y-6 animate-fade-in-up">
 			{/* Header */}
-			<div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-				<div className="flex items-center gap-4">
-					<h1 className="text-2xl font-bold">Email Campaigns</h1>
-				</div>
+			<div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-end">
+
 				<Button onClick={() => router.push("/emails/new")} className="focus-ring">
 					<Plus className="mr-2 h-4 w-4" />
 					Create Email
