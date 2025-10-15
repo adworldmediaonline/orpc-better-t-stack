@@ -39,9 +39,19 @@ export function EmailListItem({ email, onClick }: EmailListItemProps) {
 
 
 
-	// Format date for display
+	// Format date for display - treat stored UTC as naive local time
 	const formatScheduledTime = (date: Date): string => {
-		return format(date, "MMM d, h:mm a");
+		// The date is stored as UTC but represents the user's intended local time
+		// So we extract the components directly without timezone conversion
+		const year = date.getUTCFullYear();
+		const month = date.getUTCMonth();
+		const day = date.getUTCDate();
+		const hours = date.getUTCHours();
+		const minutes = date.getUTCMinutes();
+
+		// Create a new date with these components in local timezone for formatting
+		const localDate = new Date(year, month, day, hours, minutes);
+		return format(localDate, "MMM d, h:mm a");
 	};
 
 	return (
