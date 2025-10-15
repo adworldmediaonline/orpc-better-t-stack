@@ -70,7 +70,9 @@ export function DateTimePicker({
 				time,
 				combinedDate: combinedDate.toString(),
 				datetimeString,
-				year, month, day, hour, minute
+				year, month, day, hour, minute,
+				currentTime: new Date().toString(),
+				timezoneOffset: new Date().getTimezoneOffset()
 			});
 
 			onChange?.(datetimeString);
@@ -101,7 +103,9 @@ export function DateTimePicker({
 				combinedDate: combinedDate.toString(),
 				timeString,
 				datetimeString,
-				year, month, day, hour, minute
+				year, month, day, hour, minute,
+				currentTime: new Date().toString(),
+				timezoneOffset: new Date().getTimezoneOffset()
 			});
 
 			onChange?.(datetimeString);
@@ -142,7 +146,9 @@ export function DateTimePicker({
 			timeValue,
 			combinedDate: combinedDate.toString(),
 			datetimeString,
-			year, month, day, hour, minute
+			year, month, day, hour, minute,
+			currentTime: new Date().toString(),
+			timezoneOffset: new Date().getTimezoneOffset()
 		});
 
 		onChange?.(datetimeString);
