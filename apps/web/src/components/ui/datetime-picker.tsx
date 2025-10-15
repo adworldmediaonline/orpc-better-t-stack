@@ -27,135 +27,133 @@ export function DateTimePicker({
 	placeholder = "Pick a date and time",
 	disabled = false,
 }: DateTimePickerProps) {
-	const [date, setDate] = React.useState<Date | undefined>(
-		value ? new Date(value) : undefined
-	);
-	const [time, setTime] = React.useState<string>(
-		value ? format(new Date(value), "HH:mm") : ""
-	);
+	// Parse the datetime-local string directly without Date conversions
+	const parseDateTimeLocal = (datetimeString: string) => {
+		console.log("🔍 DateTimePicker parseDateTimeLocal - Input:", datetimeString);
 
-	React.useEffect(() => {
-		if (value) {
-			const dateValue = new Date(value);
-			setDate(dateValue);
-			setTime(format(dateValue, "HH:mm"));
-		}
-	}, [value]);
+		if (!datetimeString) return { date: undefined, time: "" };
+
+		const [datePart, timePart] = datetimeString.split('T');
+		if (!datePart || !timePart) return { date: undefined, time: "" };
+
+		const [year, month, day] = datePart.split('-').map(Number);
+		const [hours, minutes] = timePart.split(':').map(Number);
+
+		// Create date with exact components - no timezone conversion
+		const date = new Date(year, month - 1, day);
+		const time = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+
+		console.log("🔍 DateTimePicker parseDateTimeLocal - Parsed:", {
+			datetimeString,
+			datePart, timePart,
+			year, month, day, hours, minutes,
+			date: date.toString(),
+			time
+		});
+
+		return { date, time };
+	};
+
+	const { date, time } = parseDateTimeLocal(value || "");
+	const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(date);
+	const [selectedTime, setSelectedTime] = React.useState<string>(time);
+
+	// Log component initialization
+	console.log("🔍 DateTimePicker INITIALIZATION:", {
+		value,
+		parsedDate: date?.toString(),
+		parsedTime: time,
+		selectedDate: selectedDate?.toString(),
+		selectedTime
+	});
 
 	const handleDateSelect = (selectedDate: Date | undefined) => {
 		if (!selectedDate) {
-			setDate(undefined);
-			setTime("");
+			setSelectedDate(undefined);
+			setSelectedTime("");
 			onChange?.("");
 			return;
 		}
 
-		setDate(selectedDate);
+		setSelectedDate(selectedDate);
 
-		// If time is already set, combine date and time
-		if (time) {
-			const [hours, minutes] = time.split(":").map(Number);
-			const combinedDate = new Date(selectedDate);
-			combinedDate.setHours(hours, minutes);
-			// Format as datetime-local string (YYYY-MM-DDTHH:mm)
-			const year = combinedDate.getFullYear();
-			const month = String(combinedDate.getMonth() + 1).padStart(2, '0');
-			const day = String(combinedDate.getDate()).padStart(2, '0');
-			const hour = String(combinedDate.getHours()).padStart(2, '0');
-			const minute = String(combinedDate.getMinutes()).padStart(2, '0');
+		// If time is already set, combine date and time EXACTLY as selected
+		if (selectedTime) {
+			const [hours, minutes] = selectedTime.split(":").map(Number);
+
+			// Create datetime-local string with EXACT components - no modifications
+			const year = selectedDate.getFullYear();
+			const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+			const day = String(selectedDate.getDate()).padStart(2, '0');
+			const hour = String(hours).padStart(2, '0');
+			const minute = String(minutes).padStart(2, '0');
 			const datetimeString = `${year}-${month}-${day}T${hour}:${minute}`;
 
-			console.log("🔍 DateTimePicker DEBUG - Date selected with existing time:", {
+			console.log("🔍 DateTimePicker SIMPLE - Date selected with existing time:", {
 				selectedDate: selectedDate.toString(),
-				time,
-				combinedDate: combinedDate.toString(),
+				selectedTime,
 				datetimeString,
 				year, month, day, hour, minute,
-				currentTime: new Date().toString(),
-				timezoneOffset: new Date().getTimezoneOffset()
 			});
 
+			console.log("🔍 DateTimePicker CALLING onChange with:", datetimeString);
 			onChange?.(datetimeString);
 		} else {
 			// Set default time to current time if no time is selected
 			const now = new Date();
-			const today = new Date();
-			today.setHours(0, 0, 0, 0);
+			const timeString = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+			setSelectedTime(timeString);
 
-			// If selecting today, set time to current time
-			// If selecting future date, set time to current time as default
-			const combinedDate = new Date(selectedDate);
-			combinedDate.setHours(now.getHours(), now.getMinutes());
-			const timeString = format(combinedDate, "HH:mm");
-			setTime(timeString);
-
-			// Format as datetime-local string
-			const year = combinedDate.getFullYear();
-			const month = String(combinedDate.getMonth() + 1).padStart(2, '0');
-			const day = String(combinedDate.getDate()).padStart(2, '0');
-			const hour = String(combinedDate.getHours()).padStart(2, '0');
-			const minute = String(combinedDate.getMinutes()).padStart(2, '0');
+			// Create datetime-local string with EXACT components
+			const year = selectedDate.getFullYear();
+			const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+			const day = String(selectedDate.getDate()).padStart(2, '0');
+			const hour = String(now.getHours()).padStart(2, '0');
+			const minute = String(now.getMinutes()).padStart(2, '0');
 			const datetimeString = `${year}-${month}-${day}T${hour}:${minute}`;
 
-			console.log("🔍 DateTimePicker DEBUG - Date selected with default time:", {
+			console.log("🔍 DateTimePicker SIMPLE - Date selected with default time:", {
 				selectedDate: selectedDate.toString(),
 				now: now.toString(),
-				combinedDate: combinedDate.toString(),
 				timeString,
 				datetimeString,
 				year, month, day, hour, minute,
-				currentTime: new Date().toString(),
-				timezoneOffset: new Date().getTimezoneOffset()
 			});
 
+			console.log("🔍 DateTimePicker CALLING onChange with:", datetimeString);
 			onChange?.(datetimeString);
 		}
 	};
 
 	const handleTimeChange = (timeValue: string) => {
-		if (!date || !timeValue) {
-			setTime(timeValue);
+		if (!selectedDate || !timeValue) {
+			setSelectedTime(timeValue);
 			return;
 		}
 
+		setSelectedTime(timeValue);
+
+		// Create datetime-local string with EXACT components - no modifications
 		const [hours, minutes] = timeValue.split(":").map(Number);
-		const combinedDate = new Date(date);
-		combinedDate.setHours(hours, minutes);
-
-		// Check if the selected time is in the past for today's date
-		const now = new Date();
-		const today = new Date();
-		today.setHours(0, 0, 0, 0);
-
-		if (date.getTime() === today.getTime() && combinedDate < now) {
-			// If selecting today and time is in the past, don't update
-			// The min attribute on the input should prevent this, but this is a fallback
-			return;
-		}
-
-		setTime(timeValue);
-		// Format as datetime-local string
-		const year = combinedDate.getFullYear();
-		const month = String(combinedDate.getMonth() + 1).padStart(2, '0');
-		const day = String(combinedDate.getDate()).padStart(2, '0');
-		const hour = String(combinedDate.getHours()).padStart(2, '0');
-		const minute = String(combinedDate.getMinutes()).padStart(2, '0');
+		const year = selectedDate.getFullYear();
+		const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+		const day = String(selectedDate.getDate()).padStart(2, '0');
+		const hour = String(hours).padStart(2, '0');
+		const minute = String(minutes).padStart(2, '0');
 		const datetimeString = `${year}-${month}-${day}T${hour}:${minute}`;
 
-		console.log("🔍 DateTimePicker DEBUG - Time changed:", {
+		console.log("🔍 DateTimePicker SIMPLE - Time changed:", {
 			timeValue,
-			combinedDate: combinedDate.toString(),
 			datetimeString,
 			year, month, day, hour, minute,
-			currentTime: new Date().toString(),
-			timezoneOffset: new Date().getTimezoneOffset()
 		});
 
+		console.log("🔍 DateTimePicker CALLING onChange with:", datetimeString);
 		onChange?.(datetimeString);
 	};
 
-	const displayValue = date
-		? `${format(date, "PPP")} at ${time || format(date, "p")}`
+	const displayValue = selectedDate
+		? `${format(selectedDate, "PPP")} at ${selectedTime || format(selectedDate, "p")}`
 		: placeholder;
 
 	return (
@@ -166,7 +164,7 @@ export function DateTimePicker({
 						variant="outline"
 						className={cn(
 							"w-full justify-start text-left font-normal",
-							!date && "text-muted-foreground"
+							!selectedDate && "text-muted-foreground"
 						)}
 						disabled={disabled}
 					>
@@ -178,7 +176,7 @@ export function DateTimePicker({
 					<div className="flex">
 						<Calendar
 							mode="single"
-							selected={date}
+							selected={selectedDate}
 							onSelect={handleDateSelect}
 							disabled={(date) => {
 								const today = new Date();
@@ -196,23 +194,23 @@ export function DateTimePicker({
 								<Input
 									id="time"
 									type="time"
-									value={time}
+									value={selectedTime}
 									onChange={(e) => handleTimeChange(e.target.value)}
 									className="w-24"
-									min={date && date.getTime() === new Date().setHours(0, 0, 0, 0)
+									min={selectedDate && selectedDate.getTime() === new Date().setHours(0, 0, 0, 0)
 										? format(new Date(), "HH:mm")
 										: undefined}
 								/>
 							</div>
-							{date && (
+							{selectedDate && (
 								<div className="text-xs text-muted-foreground">
-									{format(date, "PPP")}
-									{date.getTime() === new Date().setHours(0, 0, 0, 0) && (
+									{format(selectedDate, "PPP")}
+									{selectedDate.getTime() === new Date().setHours(0, 0, 0, 0) && (
 										<div className="text-blue-600 mt-1">
 											Only future times allowed for today
 										</div>
 									)}
-									{date.getTime() > new Date().setHours(0, 0, 0, 0) && (
+									{selectedDate.getTime() > new Date().setHours(0, 0, 0, 0) && (
 										<div className="text-green-600 mt-1">
 											Any time allowed for future dates
 										</div>
