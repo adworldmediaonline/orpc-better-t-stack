@@ -49,12 +49,11 @@ const getStatsSchema = z
 	})
 	.default({ timeRange: "all" });
 
-// Helper function to parse datetime-local string as local time
-function parseDateTimeLocal(datetimeLocalString: string): Date {
-	console.log("🔍 parseDateTimeLocal - Input:", datetimeLocalString);
 
-	// datetime-local format: "YYYY-MM-DDTHH:mm"
-	// We need to parse this as local time, not UTC
+// Helper function to create a date that won't be affected by timezone conversion
+function createTimezoneSafeDate(datetimeLocalString: string): Date {
+	console.log("🔍 createTimezoneSafeDate - Input:", datetimeLocalString);
+
 	const [datePart, timePart] = datetimeLocalString.split('T');
 	if (!datePart || !timePart) {
 		throw new Error("Invalid datetime-local format");
@@ -70,16 +69,16 @@ function parseDateTimeLocal(datetimeLocalString: string): Date {
 		throw new Error("Invalid datetime components");
 	}
 
-	// Create date in LOCAL timezone using Date constructor
-	// This preserves the exact time the user selected
-	const localDate = new Date(year, month - 1, day, hours, minutes);
+	// Create a date that represents the exact local time
+	// We'll store this as UTC but with the local time components
+	// This way when it gets converted back, it will show the correct local time
+	const utcDate = new Date(Date.UTC(year, month - 1, day, hours, minutes));
 
-	console.log("🔍 parseDateTimeLocal - Parsed components:", { year, month, day, hours, minutes });
-	console.log("🔍 parseDateTimeLocal - Local date:", localDate.toString());
-	console.log("🔍 parseDateTimeLocal - ISO string:", localDate.toISOString());
-	console.log("🔍 parseDateTimeLocal - getTime():", localDate.getTime());
+	console.log("🔍 createTimezoneSafeDate - UTC date:", utcDate.toString());
+	console.log("🔍 createTimezoneSafeDate - UTC ISO:", utcDate.toISOString());
+	console.log("🔍 createTimezoneSafeDate - When converted back to local:", new Date(utcDate.getTime()).toString());
 
-	return localDate;
+	return utcDate;
 }
 
 
@@ -102,7 +101,7 @@ export const emailRouter = {
 				console.log("  - Input scheduledFor:", input.scheduledFor);
 
 				try {
-					scheduledFor = parseDateTimeLocal(input.scheduledFor);
+					scheduledFor = createTimezoneSafeDate(input.scheduledFor);
 
 					console.log("  - Final scheduledFor:", scheduledFor.toString());
 					console.log("  - scheduledFor ISO:", scheduledFor.toISOString());
@@ -154,7 +153,7 @@ export const emailRouter = {
 			let scheduledFor = new Date();
 			if (input.scheduledFor) {
 				try {
-					scheduledFor = parseDateTimeLocal(input.scheduledFor);
+					scheduledFor = createTimezoneSafeDate(input.scheduledFor);
 				} catch (error) {
 					console.error("❌ Bulk email date parsing error:", error);
 					throw new Error(`Invalid datetime format: ${input.scheduledFor}`);
@@ -229,6 +228,17 @@ export const emailRouter = {
 			]);
 
 
+			// Debug: Log the scheduledFor values being returned
+			console.log("🔍 getEmails - Returning emails with scheduledFor values:");
+			emails.forEach((email, index) => {
+				console.log(`  Email ${index + 1} (${email.subject}):`, {
+					scheduledFor: email.scheduledFor,
+					scheduledForType: typeof email.scheduledFor,
+					scheduledForString: email.scheduledFor.toString(),
+					scheduledForISO: email.scheduledFor.toISOString(),
+				});
+			});
+
 			return {
 				emails,
 				pagination: {
@@ -290,7 +300,7 @@ export const emailRouter = {
 			let scheduledFor = undefined;
 			if (input.scheduledFor) {
 				try {
-					scheduledFor = parseDateTimeLocal(input.scheduledFor);
+					scheduledFor = createTimezoneSafeDate(input.scheduledFor);
 				} catch (error) {
 					console.error("❌ Update email date parsing error:", error);
 					throw new Error(`Invalid datetime format: ${input.scheduledFor}`);

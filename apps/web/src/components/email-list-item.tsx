@@ -38,8 +38,28 @@ export function EmailListItem({ email, onClick }: EmailListItemProps) {
 		deliveredCount > 0 ? Math.round((openedCount / deliveredCount) * 100) : 0;
 
 
+	// Debug: Log the scheduledFor value received from API
+	console.log("🔍 EmailListItem DEBUG:", {
+		subject: email.subject,
+		scheduledFor: email.scheduledFor,
+		scheduledForType: typeof email.scheduledFor,
+		scheduledForString: email.scheduledFor.toString(),
+		scheduledForISO: email.scheduledFor.toISOString(),
+		formattedDisplay: format(new Date(email.scheduledFor), "MMM d, h:mm a"),
+	});
+
 	// Helper function to format date without timezone conversion issues
 	const formatScheduledTime = (date: Date): string => {
+		console.log("🔍 formatScheduledTime DEBUG:", {
+			inputDate: date.toString(),
+			inputISO: date.toISOString(),
+			year: date.getFullYear(),
+			month: date.getMonth(),
+			day: date.getDate(),
+			hours: date.getHours(),
+			minutes: date.getMinutes(),
+		});
+
 		// Get the local components directly to avoid timezone conversion
 		const year = date.getFullYear();
 		const month = date.getMonth();
@@ -49,7 +69,14 @@ export function EmailListItem({ email, onClick }: EmailListItemProps) {
 
 		// Create a new date with the same local components
 		const localDate = new Date(year, month, day, hours, minutes);
-		return format(localDate, "MMM d, h:mm a");
+		const result = format(localDate, "MMM d, h:mm a");
+
+		console.log("🔍 formatScheduledTime RESULT:", {
+			localDate: localDate.toString(),
+			result,
+		});
+
+		return result;
 	};
 
 	return (
