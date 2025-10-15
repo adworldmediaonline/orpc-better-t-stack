@@ -18,8 +18,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-	title: "orpc-better-t-stack",
-	description: "orpc-better-t-stack",
+	title: "Send later",
+	description: "Send later - Send your emails later with ease",
 };
 
 export default function RootLayout({

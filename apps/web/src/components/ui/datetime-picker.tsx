@@ -121,17 +121,17 @@ export function DateTimePicker({
 					<Button
 						variant="outline"
 						className={cn(
-							"w-full justify-start text-left font-normal",
+							"w-full justify-start text-left font-normal h-11",
 							!selectedDate && "text-muted-foreground"
 						)}
 						disabled={disabled}
 					>
 						<CalendarIcon className="mr-2 h-4 w-4" />
-						{displayValue}
+						<span className="truncate">{displayValue}</span>
 					</Button>
 				</PopoverTrigger>
-				<PopoverContent className="w-auto p-0" align="start">
-					<div className="flex">
+				<PopoverContent className="w-auto p-0" align="start" side="bottom" sideOffset={4}>
+					<div className="flex flex-col sm:flex-row">
 						<Calendar
 							mode="single"
 							selected={selectedDate}
@@ -142,37 +142,58 @@ export function DateTimePicker({
 								return date < today;
 							}}
 							initialFocus
+							className="rounded-md border-0"
 						/>
-						<div className="border-l p-3 space-y-2">
-							<Label htmlFor="time" className="text-sm font-medium">
-								Time
-							</Label>
-							<div className="flex items-center space-x-2">
-								<Clock className="h-4 w-4 text-muted-foreground" />
+						<div className="border-l border-t sm:border-t-0 p-4 space-y-3 min-w-[200px]">
+							<div className="space-y-2">
+								<Label htmlFor="time" className="text-sm font-medium flex items-center gap-2">
+									<Clock className="h-4 w-4" />
+									Time
+								</Label>
 								<Input
 									id="time"
 									type="time"
 									value={selectedTime}
 									onChange={(e) => handleTimeChange(e.target.value)}
-									className="w-24"
+									className="w-full"
 									min={selectedDate && selectedDate.getTime() === new Date().setHours(0, 0, 0, 0)
 										? format(new Date(), "HH:mm")
 										: undefined}
 								/>
 							</div>
+
 							{selectedDate && (
-								<div className="text-xs text-muted-foreground">
-									{format(selectedDate, "PPP")}
+								<div className="space-y-2">
+									<div className="text-sm text-muted-foreground">
+										Selected: {format(selectedDate, "PPP")}
+									</div>
+
 									{selectedDate.getTime() === new Date().setHours(0, 0, 0, 0) && (
-										<div className="text-blue-600 mt-1">
-											Only future times allowed for today
+										<div className="flex items-start gap-2 p-2 rounded-md bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800">
+											<div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5 flex-shrink-0"></div>
+											<div className="text-xs text-blue-700 dark:text-blue-300">
+												Only future times are allowed for today
+											</div>
 										</div>
 									)}
+
 									{selectedDate.getTime() > new Date().setHours(0, 0, 0, 0) && (
-										<div className="text-green-600 mt-1">
-											Any time allowed for future dates
+										<div className="flex items-start gap-2 p-2 rounded-md bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800">
+											<div className="w-2 h-2 rounded-full bg-green-500 mt-1.5 flex-shrink-0"></div>
+											<div className="text-xs text-green-700 dark:text-green-300">
+												Any time is allowed for future dates
+											</div>
 										</div>
 									)}
+								</div>
+							)}
+
+							{!selectedDate && (
+								<div className="flex items-start gap-2 p-2 rounded-md bg-muted/50 border border-muted">
+									<div className="w-2 h-2 rounded-full bg-muted-foreground mt-1.5 flex-shrink-0"></div>
+									<div className="text-xs text-muted-foreground">
+										Please select a date first
+									</div>
 								</div>
 							)}
 						</div>

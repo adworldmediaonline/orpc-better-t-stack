@@ -234,7 +234,12 @@ export function CreateEmailContent() {
 									name="scheduledFor"
 									render={({ field }) => (
 										<FormItem>
-											<FormLabel>Schedule For</FormLabel>
+											<FormLabel className="flex items-center gap-2">
+												Schedule For
+												<span className="text-xs text-muted-foreground font-normal">
+													(Local Time)
+												</span>
+											</FormLabel>
 											<FormControl>
 												<DateTimePicker
 													value={field.value}
@@ -243,9 +248,8 @@ export function CreateEmailContent() {
 												/>
 											</FormControl>
 											<p className="text-xs text-muted-foreground">
-												Leave empty to send immediately
+												Leave empty to send immediately. Times are in your local timezone.
 											</p>
-											{/*  */}
 											<FormMessage />
 										</FormItem>
 									)}
