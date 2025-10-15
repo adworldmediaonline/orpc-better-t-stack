@@ -5,7 +5,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { orpc } from "@/utils/orpc";
 import { Button } from "@/components/ui/button";
-import { DataTable, createSortableHeader, createSelectColumn } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/badge";
 import {
 	Plus,
@@ -14,10 +13,22 @@ import {
 	MoreHorizontal,
 	Calendar,
 	Users,
-	Mail
+	Mail,
+	Filter,
+	ChevronDown,
+	ArrowUpDown,
+	Search
 } from "lucide-react";
 import { format } from "date-fns";
-import type { ColumnDef } from "@tanstack/react-table";
+import type { ColumnDef, ColumnFiltersState, SortingState } from "@tanstack/react-table";
+import {
+	Table,
+	TableBody,
+	TableCell,
+	TableHead,
+	TableHeader,
+	TableRow,
+} from "@/components/ui/table";
 import {
 	DropdownMenu,
 	DropdownMenuContent,
@@ -25,7 +36,18 @@ import {
 	DropdownMenuLabel,
 	DropdownMenuSeparator,
 	DropdownMenuTrigger,
+	DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+	flexRender,
+	getCoreRowModel,
+	getFilteredRowModel,
+	getPaginationRowModel,
+	getSortedRowModel,
+	useReactTable,
+} from "@tanstack/react-table";
 
 type EmailStatus = "SCHEDULED" | "SENDING" | "SENT" | "FAILED" | "CANCELLED";
 
@@ -62,32 +84,56 @@ const getStatusBadge = (status: EmailStatus) => {
 
 export function EmailsContent() {
 	const router = useRouter();
-	const [activeTab, setActiveTab] = useState<"all" | EmailStatus>("all");
-	const [page, setPage] = useState(1);
+	const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
+	const [sorting, setSorting] = useState<SortingState>([]);
+	const [rowSelection, setRowSelection] = useState({});
 
-	const statusFilter: EmailStatus | undefined = activeTab === "all" ? undefined : activeTab;
-
-	// Build query params without undefined values
-	const queryParams: any = {
-		page,
-		limit: 20,
-	};
-
-	if (statusFilter) {
-		queryParams.status = statusFilter;
-	}
-
+	// Fetch all emails - we'll do filtering client-side with TanStack Table
 	const { data, isLoading, error } = useQuery({
-		...orpc.emails.getEmails.queryOptions(queryParams),
-		queryKey: ["emails", page, statusFilter] as const,
+		...orpc.emails.getEmails.queryOptions({ page: 1, limit: 1000 }), // Get more emails for client-side filtering
+		queryKey: ["emails"] as const,
 	});
 
 	const columns: ColumnDef<Email>[] = useMemo(
 		() => [
-			createSelectColumn<Email>(),
+			{
+				id: "select",
+				header: ({ table }) => (
+					<Checkbox
+						checked={
+							table.getIsAllPageRowsSelected() ||
+							(table.getIsSomePageRowsSelected() && "indeterminate")
+						}
+						onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+						aria-label="Select all"
+						className="focus-ring"
+					/>
+				),
+				cell: ({ row }) => (
+					<Checkbox
+						checked={row.getIsSelected()}
+						onCheckedChange={(value) => row.toggleSelected(!!value)}
+						aria-label="Select row"
+						className="focus-ring"
+					/>
+				),
+				enableSorting: false,
+				enableHiding: false,
+			},
 			{
 				accessorKey: "subject",
-				header: createSortableHeader("Subject", "subject"),
+				header: ({ column }) => {
+					return (
+						<Button
+							variant="ghost"
+							onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+							className="focus-ring"
+						>
+							Subject
+							<ArrowUpDown className="ml-2 h-4 w-4" />
+						</Button>
+					);
+				},
 				cell: ({ row }) => {
 					const email = row.original;
 					return (
@@ -107,14 +153,39 @@ export function EmailsContent() {
 			},
 			{
 				accessorKey: "status",
-				header: createSortableHeader("Status", "status"),
+				header: ({ column }) => {
+					return (
+						<Button
+							variant="ghost"
+							onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+							className="focus-ring"
+						>
+							Status
+							<ArrowUpDown className="ml-2 h-4 w-4" />
+						</Button>
+					);
+				},
 				cell: ({ row }) => {
 					return getStatusBadge(row.getValue("status"));
+				},
+				filterFn: (row, id, value) => {
+					return value.includes(row.getValue(id));
 				},
 			},
 			{
 				accessorKey: "scheduledFor",
-				header: createSortableHeader("Scheduled", "scheduledFor"),
+				header: ({ column }) => {
+					return (
+						<Button
+							variant="ghost"
+							onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+							className="focus-ring"
+						>
+							Scheduled
+							<ArrowUpDown className="ml-2 h-4 w-4" />
+						</Button>
+					);
+				},
 				cell: ({ row }) => {
 					const date = new Date(row.getValue("scheduledFor"));
 					// Format date for display - treat stored UTC as naive local time
@@ -138,7 +209,18 @@ export function EmailsContent() {
 			},
 			{
 				accessorKey: "recipients",
-				header: createSortableHeader("Recipients", "recipients"),
+				header: ({ column }) => {
+					return (
+						<Button
+							variant="ghost"
+							onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+							className="focus-ring"
+						>
+							Recipients
+							<ArrowUpDown className="ml-2 h-4 w-4" />
+						</Button>
+					);
+				},
 				cell: ({ row }) => {
 					const recipients = row.getValue("recipients") as Email["recipients"];
 					return (
@@ -183,12 +265,27 @@ export function EmailsContent() {
 		[router]
 	);
 
-	const tabs = [
-		{ key: "all" as const, label: "All Emails" },
-		{ key: "SCHEDULED" as const, label: "Scheduled" },
-		{ key: "SENT" as const, label: "Sent" },
-		{ key: "FAILED" as const, label: "Failed" },
-	];
+	const table = useReactTable({
+		data: data?.emails || [],
+		columns,
+		onSortingChange: setSorting,
+		onColumnFiltersChange: setColumnFilters,
+		getCoreRowModel: getCoreRowModel(),
+		getPaginationRowModel: getPaginationRowModel(),
+		getSortedRowModel: getSortedRowModel(),
+		getFilteredRowModel: getFilteredRowModel(),
+		onRowSelectionChange: setRowSelection,
+		state: {
+			sorting,
+			columnFilters,
+			rowSelection,
+		},
+		initialState: {
+			pagination: {
+				pageSize: 10,
+			},
+		},
+	});
 
 	if (error) {
 		return (
@@ -210,25 +307,63 @@ export function EmailsContent() {
 			{/* Header */}
 			<div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
 				<div className="flex items-center gap-4">
-					{tabs.map((tab) => (
-						<Button
-							key={tab.key}
-							variant={activeTab === tab.key ? "default" : "ghost"}
-							size="sm"
-							onClick={() => {
-								setActiveTab(tab.key);
-								setPage(1);
-							}}
-							className="focus-ring"
-						>
-							{tab.label}
-						</Button>
-					))}
+					<h1 className="text-2xl font-bold">Email Campaigns</h1>
 				</div>
 				<Button onClick={() => router.push("/emails/new")} className="focus-ring">
 					<Plus className="mr-2 h-4 w-4" />
 					Create Email
 				</Button>
+			</div>
+
+			{/* Filters */}
+			<div className="flex items-center gap-4">
+				<Input
+					placeholder="Search emails..."
+					value={(table.getColumn("subject")?.getFilterValue() as string) ?? ""}
+					onChange={(event) =>
+						table.getColumn("subject")?.setFilterValue(event.target.value)
+					}
+					className="max-w-sm focus-ring"
+				/>
+
+				{/* Status Filter */}
+				<DropdownMenu>
+					<DropdownMenuTrigger asChild>
+						<Button variant="outline" className="focus-ring">
+							<Filter className="mr-2 h-4 w-4" />
+							Status
+							<ChevronDown className="ml-2 h-4 w-4" />
+						</Button>
+					</DropdownMenuTrigger>
+					<DropdownMenuContent align="end" className="bg-card/95 backdrop-blur-md border-border/50">
+						<DropdownMenuLabel>Filter by Status</DropdownMenuLabel>
+						<DropdownMenuSeparator />
+						{["SCHEDULED", "SENDING", "SENT", "FAILED", "CANCELLED"].map((status) => (
+							<DropdownMenuCheckboxItem
+								key={status}
+								checked={(table.getColumn("status")?.getFilterValue() as string[])?.includes(status) || false}
+								onCheckedChange={(value) => {
+									const currentFilters = (table.getColumn("status")?.getFilterValue() as string[]) || [];
+									if (value) {
+										table.getColumn("status")?.setFilterValue([...currentFilters, status]);
+									} else {
+										table.getColumn("status")?.setFilterValue(
+											currentFilters.filter((item) => item !== status)
+										);
+									}
+								}}
+							>
+								{getStatusBadge(status as EmailStatus)}
+							</DropdownMenuCheckboxItem>
+						))}
+						<DropdownMenuSeparator />
+						<DropdownMenuItem
+							onClick={() => table.getColumn("status")?.setFilterValue(undefined)}
+						>
+							Clear Filters
+						</DropdownMenuItem>
+					</DropdownMenuContent>
+				</DropdownMenu>
 			</div>
 
 			{/* Data Table */}
@@ -245,10 +380,7 @@ export function EmailsContent() {
 					</div>
 					<h3 className="text-lg font-semibold mb-2">No emails found</h3>
 					<p className="text-muted-foreground mb-4">
-						{activeTab === "all"
-							? "Get started by creating your first email campaign"
-							: `No emails with status "${activeTab.toLowerCase()}" found`
-						}
+						Get started by creating your first email campaign
 					</p>
 					<Button onClick={() => router.push("/emails/new")}>
 						<Plus className="mr-2 h-4 w-4" />
@@ -256,13 +388,88 @@ export function EmailsContent() {
 					</Button>
 				</div>
 			) : (
-				<DataTable
-					columns={columns}
-					data={data?.emails || []}
-					searchKey="subject"
-					searchPlaceholder="Search emails..."
-					pageSize={10}
-				/>
+				<div className="w-full">
+					<div className="rounded-md border border-border/50 bg-card/80 backdrop-blur-sm">
+						<Table>
+							<TableHeader>
+								{table.getHeaderGroups().map((headerGroup) => (
+									<TableRow key={headerGroup.id}>
+										{headerGroup.headers.map((header) => {
+											return (
+												<TableHead key={header.id}>
+													{header.isPlaceholder
+														? null
+														: flexRender(
+																header.column.columnDef.header,
+																header.getContext()
+															)}
+												</TableHead>
+											);
+										})}
+									</TableRow>
+								))}
+							</TableHeader>
+							<TableBody>
+								{table.getRowModel().rows?.length ? (
+									table.getRowModel().rows.map((row) => (
+										<TableRow
+											key={row.id}
+											data-state={row.getIsSelected() && "selected"}
+										>
+											{row.getVisibleCells().map((cell) => (
+												<TableCell key={cell.id}>
+													{flexRender(cell.column.columnDef.cell, cell.getContext())}
+												</TableCell>
+											))}
+										</TableRow>
+									))
+								) : (
+									<TableRow>
+										<TableCell colSpan={columns.length} className="h-24 text-center">
+											<div className="flex flex-col items-center justify-center py-8">
+												<div className="p-4 rounded-full bg-muted/50 mb-4">
+													<Search className="h-6 w-6 text-muted-foreground" />
+												</div>
+												<h3 className="text-lg font-semibold mb-2">No results found</h3>
+												<p className="text-muted-foreground">
+													Try adjusting your search or filter criteria
+												</p>
+											</div>
+										</TableCell>
+									</TableRow>
+								)}
+							</TableBody>
+						</Table>
+					</div>
+
+					{/* Pagination */}
+					<div className="flex items-center justify-end space-x-2 py-4">
+						<div className="flex-1 text-sm text-muted-foreground">
+							{table.getFilteredSelectedRowModel().rows.length} of{" "}
+							{table.getFilteredRowModel().rows.length} row(s) selected.
+						</div>
+						<div className="space-x-2">
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={() => table.previousPage()}
+								disabled={!table.getCanPreviousPage()}
+								className="focus-ring"
+							>
+								Previous
+							</Button>
+							<Button
+								variant="outline"
+								size="sm"
+								onClick={() => table.nextPage()}
+								disabled={!table.getCanNextPage()}
+								className="focus-ring"
+							>
+								Next
+							</Button>
+						</div>
+					</div>
+				</div>
 			)}
 		</div>
 	);
