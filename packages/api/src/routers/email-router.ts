@@ -82,6 +82,7 @@ function parseDateTimeLocal(datetimeLocalString: string): Date {
 	return localDate;
 }
 
+
 export const emailRouter = {
 	createEmail: protectedProcedure
 		.input(createEmailSchema)
@@ -226,6 +227,7 @@ export const emailRouter = {
 				}),
 				prisma.email.count({ where }),
 			]);
+
 
 			return {
 				emails,
