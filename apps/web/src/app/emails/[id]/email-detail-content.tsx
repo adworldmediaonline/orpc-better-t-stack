@@ -28,9 +28,24 @@ export function EmailDetailContent({ emailId }: EmailDetailContentProps) {
 	const router = useRouter();
 	const queryClient = useQueryClient();
 
-	const { data: email, isLoading, error } = useQuery(
-		orpc.emails.getEmailById.queryOptions({ id: emailId })
-	);
+	// Validate emailId before making queries
+	if (!emailId || emailId.trim().length === 0) {
+		return (
+			<Card>
+				<CardContent className="py-8 text-center text-destructive">
+					Invalid email ID
+				</CardContent>
+			</Card>
+		);
+	}
+
+	const { data: email, isLoading, error } = useQuery({
+		queryKey: ["email", emailId],
+		queryFn: async () => {
+			return await client.emails.getEmailById({ id: emailId });
+		},
+		retry: false,
+	});
 
 	const cancelMutation = useMutation({
 		mutationFn: async () => {
@@ -39,7 +54,7 @@ export function EmailDetailContent({ emailId }: EmailDetailContentProps) {
 		onSuccess: () => {
 			toast.success("Email cancelled successfully");
 			queryClient.invalidateQueries({
-				queryKey: orpc.emails.getEmailById.queryOptions({ id: emailId }).queryKey,
+				queryKey: ["email", emailId],
 			});
 		},
 		onError: (error) => {
@@ -54,7 +69,7 @@ export function EmailDetailContent({ emailId }: EmailDetailContentProps) {
 		onSuccess: () => {
 			toast.success("Email scheduled for retry");
 			queryClient.invalidateQueries({
-				queryKey: orpc.emails.getEmailById.queryOptions({ id: emailId }).queryKey,
+				queryKey: ["email", emailId],
 			});
 		},
 		onError: (error) => {

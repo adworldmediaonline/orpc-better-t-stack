@@ -22,11 +22,12 @@ const createBulkEmailSchema = z.object({
 
 const getEmailsSchema = z
 	.object({
-		page: z.number().min(1).default(1),
-		limit: z.number().min(1).max(100).default(20),
+		page: z.number().min(1).optional().default(1),
+		limit: z.number().min(1).max(100).optional().default(20),
 		status: z.enum(["SCHEDULED", "SENDING", "SENT", "FAILED", "CANCELLED"]).optional(),
-		search: z.string().optional(),
+		search: z.string().min(1).optional(),
 	})
+	.optional()
 	.default({ page: 1, limit: 20 });
 
 const emailIdSchema = z.object({
@@ -51,7 +52,13 @@ export const emailRouter = {
 	createEmail: protectedProcedure
 		.input(createEmailSchema)
 		.handler(async ({ context, input }) => {
-			const scheduledFor = input.scheduledFor ? new Date(input.scheduledFor) : new Date();
+			// Handle datetime-local input properly
+			let scheduledFor = new Date();
+			if (input.scheduledFor) {
+				// datetime-local gives us "YYYY-MM-DDTHH:mm" in local time
+				// Create date object treating it as local time
+				scheduledFor = new Date(input.scheduledFor);
+			}
 
 			const email = await prisma.email.create({
 				data: {
@@ -85,7 +92,13 @@ export const emailRouter = {
 				throw new Error("No valid email addresses found in CSV");
 			}
 
-			const scheduledFor = input.scheduledFor ? new Date(input.scheduledFor) : new Date();
+			// Handle datetime-local input properly
+			let scheduledFor = new Date();
+			if (input.scheduledFor) {
+				// datetime-local gives us "YYYY-MM-DDTHH:mm" in local time
+				// Create date object treating it as local time
+				scheduledFor = new Date(input.scheduledFor);
+			}
 
 			const email = await prisma.email.create({
 				data: {
