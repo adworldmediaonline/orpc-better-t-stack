@@ -1,4 +1,8 @@
 import { Resend } from "resend";
+import { config } from "dotenv";
+
+// Load environment variables from the web app's .env file
+config({ path: "../../apps/web/.env" });
 
 let resendInstance: Resend | null = null;
 

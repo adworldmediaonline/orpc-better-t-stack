@@ -18,7 +18,8 @@
     "db:migrate": "turbo -F @orpc-better-t-stack/db db:migrate"
   },
   "dependencies": {
-    "dotenv": "^17.2.2",
+    "dotenv": "catalog:",
+    "resend": "^4.8.0",
     "zod": "^4.1.11"
   },
   "devDependencies": {
