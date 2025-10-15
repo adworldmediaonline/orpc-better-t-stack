@@ -48,9 +48,9 @@ export function EmailListItem({ email, onClick }: EmailListItemProps) {
 		formattedDisplay: format(new Date(email.scheduledFor), "MMM d, h:mm a"),
 	});
 
-	// Helper function to format date without timezone conversion issues
+	// SIMPLE function to format date - NO CONVERSIONS
 	const formatScheduledTime = (date: Date): string => {
-		console.log("🔍 formatScheduledTime DEBUG:", {
+		console.log("🔍 formatScheduledTime SIMPLE DEBUG:", {
 			inputDate: date.toString(),
 			inputISO: date.toISOString(),
 			year: date.getFullYear(),
@@ -60,19 +60,10 @@ export function EmailListItem({ email, onClick }: EmailListItemProps) {
 			minutes: date.getMinutes(),
 		});
 
-		// Get the local components directly to avoid timezone conversion
-		const year = date.getFullYear();
-		const month = date.getMonth();
-		const day = date.getDate();
-		const hours = date.getHours();
-		const minutes = date.getMinutes();
+		// Use the date directly - no conversions, no modifications
+		const result = format(date, "MMM d, h:mm a");
 
-		// Create a new date with the same local components
-		const localDate = new Date(year, month, day, hours, minutes);
-		const result = format(localDate, "MMM d, h:mm a");
-
-		console.log("🔍 formatScheduledTime RESULT:", {
-			localDate: localDate.toString(),
+		console.log("🔍 formatScheduledTime SIMPLE RESULT:", {
 			result,
 		});
 
