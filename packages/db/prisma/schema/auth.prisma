@@ -9,6 +9,7 @@ model User {
   sessions      Session[]
   accounts      Account[]
   todos         Todo[]
+  emails        Email[]
 
   @@unique([email])
   @@map("user")
@@ -70,4 +71,91 @@ model Todo {
 
   @@index([userId])
   @@map("todo")
+}
+
+enum EmailStatus {
+  SCHEDULED
+  SENDING
+  SENT
+  FAILED
+  CANCELLED
+}
+
+enum RecipientStatus {
+  PENDING
+  DELIVERED
+  OPENED
+  CLICKED
+  BOUNCED
+  COMPLAINED
+}
+
+enum EmailEventType {
+  DELIVERED
+  OPENED
+  CLICKED
+  BOUNCED
+  COMPLAINED
+}
+
+model Email {
+  id             String      @id @default(cuid()) @map("_id")
+  userId         String
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subject        String      @db.VarChar(255)
+  htmlBody       String      @db.Text
+  textBody       String?     @db.Text
+  scheduledFor   DateTime
+  status         EmailStatus @default(SCHEDULED)
+  sentAt         DateTime?
+  resendEmailId  String?
+  error          String?     @db.Text
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  recipients     EmailRecipient[]
+
+  @@index([userId])
+  @@index([status])
+  @@index([scheduledFor])
+  @@index([resendEmailId])
+  @@map("email")
+}
+
+model EmailRecipient {
+  id             String           @id @default(cuid()) @map("_id")
+  emailId        String
+  email          Email            @relation(fields: [emailId], references: [id], onDelete: Cascade)
+  recipientEmail String
+  recipientName  String?
+  status         RecipientStatus  @default(PENDING)
+  deliveredAt    DateTime?
+  openedAt       DateTime?
+  clickedAt      DateTime?
+  bouncedAt      DateTime?
+  complaintAt    DateTime?
+  resendEmailId  String?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  events         EmailEvent[]
+
+  @@index([emailId])
+  @@index([resendEmailId])
+  @@index([status])
+  @@map("email_recipient")
+}
+
+model EmailEvent {
+  id               String          @id @default(cuid()) @map("_id")
+  emailRecipientId String
+  recipient        EmailRecipient  @relation(fields: [emailRecipientId], references: [id], onDelete: Cascade)
+  eventType        EmailEventType
+  eventData        Json?
+  ipAddress        String?
+  userAgent        String?
+  createdAt        DateTime        @default(now())
+
+  @@index([emailRecipientId])
+  @@index([eventType])
+  @@index([createdAt])
+  @@map("email_event")
 }

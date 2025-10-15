@@ -41,3 +41,18 @@ export type Verification = Prisma.VerificationModel
  * 
  */
 export type Todo = Prisma.TodoModel
+/**
+ * Model Email
+ * 
+ */
+export type Email = Prisma.EmailModel
+/**
+ * Model EmailRecipient
+ * 
+ */
+export type EmailRecipient = Prisma.EmailRecipientModel
+/**
+ * Model EmailEvent
+ * 
+ */
+export type EmailEvent = Prisma.EmailEventModel
