@@ -245,6 +245,7 @@ export function CreateEmailContent() {
 											<p className="text-xs text-muted-foreground">
 												Leave empty to send immediately
 											</p>
+											{/*  */}
 											<FormMessage />
 										</FormItem>
 									)}
