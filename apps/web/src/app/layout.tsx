@@ -4,6 +4,9 @@ import "../index.css";
 import Providers from "@/components/providers";
 import Header from "@/components/header";
 
+// Import cron manager to auto-start cron jobs
+import "@/lib/cron/cron-manager";
+
 const geistSans = Geist({
 	variable: "--font-geist-sans",
 	subsets: ["latin"],

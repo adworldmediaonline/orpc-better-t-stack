@@ -63,7 +63,17 @@ export function DateTimePicker({
 			const day = String(combinedDate.getDate()).padStart(2, '0');
 			const hour = String(combinedDate.getHours()).padStart(2, '0');
 			const minute = String(combinedDate.getMinutes()).padStart(2, '0');
-			onChange?.(`${year}-${month}-${day}T${hour}:${minute}`);
+			const datetimeString = `${year}-${month}-${day}T${hour}:${minute}`;
+
+			console.log("🔍 DateTimePicker DEBUG - Date selected with existing time:", {
+				selectedDate: selectedDate.toString(),
+				time,
+				combinedDate: combinedDate.toString(),
+				datetimeString,
+				year, month, day, hour, minute
+			});
+
+			onChange?.(datetimeString);
 		} else {
 			// Set default time to current time if no time is selected
 			const now = new Date();
@@ -74,14 +84,27 @@ export function DateTimePicker({
 			// If selecting future date, set time to current time as default
 			const combinedDate = new Date(selectedDate);
 			combinedDate.setHours(now.getHours(), now.getMinutes());
-			setTime(format(combinedDate, "HH:mm"));
+			const timeString = format(combinedDate, "HH:mm");
+			setTime(timeString);
+
 			// Format as datetime-local string
 			const year = combinedDate.getFullYear();
 			const month = String(combinedDate.getMonth() + 1).padStart(2, '0');
 			const day = String(combinedDate.getDate()).padStart(2, '0');
 			const hour = String(combinedDate.getHours()).padStart(2, '0');
 			const minute = String(combinedDate.getMinutes()).padStart(2, '0');
-			onChange?.(`${year}-${month}-${day}T${hour}:${minute}`);
+			const datetimeString = `${year}-${month}-${day}T${hour}:${minute}`;
+
+			console.log("🔍 DateTimePicker DEBUG - Date selected with default time:", {
+				selectedDate: selectedDate.toString(),
+				now: now.toString(),
+				combinedDate: combinedDate.toString(),
+				timeString,
+				datetimeString,
+				year, month, day, hour, minute
+			});
+
+			onChange?.(datetimeString);
 		}
 	};
 
@@ -113,7 +136,16 @@ export function DateTimePicker({
 		const day = String(combinedDate.getDate()).padStart(2, '0');
 		const hour = String(combinedDate.getHours()).padStart(2, '0');
 		const minute = String(combinedDate.getMinutes()).padStart(2, '0');
-		onChange?.(`${year}-${month}-${day}T${hour}:${minute}`);
+		const datetimeString = `${year}-${month}-${day}T${hour}:${minute}`;
+
+		console.log("🔍 DateTimePicker DEBUG - Time changed:", {
+			timeValue,
+			combinedDate: combinedDate.toString(),
+			datetimeString,
+			year, month, day, hour, minute
+		});
+
+		onChange?.(datetimeString);
 	};
 
 	const displayValue = date

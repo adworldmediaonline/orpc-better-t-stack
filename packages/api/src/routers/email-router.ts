@@ -55,9 +55,23 @@ export const emailRouter = {
 			// Handle datetime-local input properly
 			let scheduledFor = new Date();
 			if (input.scheduledFor) {
+				console.log("🔍 DEBUG - Input scheduledFor:", input.scheduledFor);
+
 				// datetime-local gives us "YYYY-MM-DDTHH:mm" in local time
-				// Create date object treating it as local time
-				scheduledFor = new Date(input.scheduledFor);
+				// Parse it correctly as local time to avoid timezone conversion
+				const [datePart, timePart] = input.scheduledFor.split('T');
+				const [year, month, day] = datePart.split('-').map(Number);
+				const [hours, minutes] = timePart.split(':').map(Number);
+
+				console.log("🔍 DEBUG - Parsed:", { year, month, day, hours, minutes });
+
+				// Create date object in local timezone - this preserves the local time
+				// The Date constructor with individual parameters creates a date in local timezone
+				scheduledFor = new Date(year, month - 1, day, hours, minutes);
+
+				console.log("🔍 DEBUG - Final scheduledFor:", scheduledFor);
+				console.log("🔍 DEBUG - scheduledFor.toISOString():", scheduledFor.toISOString());
+				console.log("🔍 DEBUG - scheduledFor.getTime():", scheduledFor.getTime());
 			}
 
 			const email = await prisma.email.create({
@@ -96,8 +110,13 @@ export const emailRouter = {
 			let scheduledFor = new Date();
 			if (input.scheduledFor) {
 				// datetime-local gives us "YYYY-MM-DDTHH:mm" in local time
-				// Create date object treating it as local time
-				scheduledFor = new Date(input.scheduledFor);
+				// Parse it correctly as local time to avoid timezone conversion
+				const [datePart, timePart] = input.scheduledFor.split('T');
+				const [year, month, day] = datePart.split('-').map(Number);
+				const [hours, minutes] = timePart.split(':').map(Number);
+
+				// Create date object in local timezone - this preserves the local time
+				scheduledFor = new Date(year, month - 1, day, hours, minutes);
 			}
 
 			const email = await prisma.email.create({
@@ -224,13 +243,26 @@ export const emailRouter = {
 				throw new Error("Only scheduled emails can be updated");
 			}
 
+			// Handle datetime-local input properly for updates
+			let scheduledFor = undefined;
+			if (input.scheduledFor) {
+				// datetime-local gives us "YYYY-MM-DDTHH:mm" in local time
+				// Parse it correctly as local time to avoid timezone conversion
+				const [datePart, timePart] = input.scheduledFor.split('T');
+				const [year, month, day] = datePart.split('-').map(Number);
+				const [hours, minutes] = timePart.split(':').map(Number);
+
+				// Create date object in local timezone - this preserves the local time
+				scheduledFor = new Date(year, month - 1, day, hours, minutes);
+			}
+
 			const email = await prisma.email.update({
 				where: { id: input.id },
 				data: {
 					...(input.subject && { subject: input.subject }),
 					...(input.htmlBody && { htmlBody: input.htmlBody }),
 					...(input.textBody !== undefined && { textBody: input.textBody }),
-					...(input.scheduledFor && { scheduledFor: new Date(input.scheduledFor) }),
+					...(scheduledFor && { scheduledFor }),
 				},
 				include: {
 					recipients: true,

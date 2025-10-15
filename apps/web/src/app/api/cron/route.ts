@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { processScheduledEmails } from "@orpc-better-t-stack/email-service";
+import { CronManager } from "@/lib/cron/cron-manager";
+
+// Ensure cron manager is started
+const cronManager = CronManager.getInstance();
 
 export async function GET(req: NextRequest) {
 	// Check if request is from Vercel Cron
@@ -26,12 +30,20 @@ export async function GET(req: NextRequest) {
 	}
 
 	try {
-		console.log("🔄 Processing scheduled emails...");
+		console.log("🔄 [MANUAL] Processing scheduled emails...");
 		const result = await processScheduledEmails();
-		console.log("✅ Cron job completed:", result);
-		return NextResponse.json({ success: true, ...result }, { status: 200 });
+		console.log("✅ [MANUAL] Cron job completed:", result);
+
+		return NextResponse.json({
+			success: true,
+			...result,
+			cronStatus: {
+				autoCronStarted: cronManager.isCronStarted(),
+				environment: process.env.NODE_ENV
+			}
+		}, { status: 200 });
 	} catch (error) {
-		console.error("❌ Cron API error:", error);
+		console.error("❌ [MANUAL] Cron API error:", error);
 		return NextResponse.json(
 			{ error: "Failed to process scheduled emails" },
 			{ status: 500 }
