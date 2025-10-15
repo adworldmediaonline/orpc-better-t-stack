@@ -2,7 +2,7 @@ import { z } from "zod";
 import { protectedProcedure } from "../index";
 import prisma from "@orpc-better-t-stack/db";
 import { processBulkCsv, retryFailedEmail } from "@orpc-better-t-stack/email-service";
-import { parseISO, format, isValid } from "date-fns";
+import { format } from "date-fns";
 
 const createEmailSchema = z.object({
 	subject: z.string().min(1, "Subject is required").max(255, "Subject must be 255 characters or less"),
@@ -49,6 +49,39 @@ const getStatsSchema = z
 	})
 	.default({ timeRange: "all" });
 
+// Helper function to parse datetime-local string as local time
+function parseDateTimeLocal(datetimeLocalString: string): Date {
+	console.log("🔍 parseDateTimeLocal - Input:", datetimeLocalString);
+
+	// datetime-local format: "YYYY-MM-DDTHH:mm"
+	// We need to parse this as local time, not UTC
+	const [datePart, timePart] = datetimeLocalString.split('T');
+	if (!datePart || !timePart) {
+		throw new Error("Invalid datetime-local format");
+	}
+
+	const [year, month, day] = datePart.split('-').map(Number);
+	const [hours, minutes] = timePart.split(':').map(Number);
+
+	// Validate all components are numbers
+	if (year === undefined || month === undefined || day === undefined ||
+		hours === undefined || minutes === undefined ||
+		isNaN(year) || isNaN(month) || isNaN(day) || isNaN(hours) || isNaN(minutes)) {
+		throw new Error("Invalid datetime components");
+	}
+
+	// Create date in LOCAL timezone using Date constructor
+	// This preserves the exact time the user selected
+	const localDate = new Date(year, month - 1, day, hours, minutes);
+
+	console.log("🔍 parseDateTimeLocal - Parsed components:", { year, month, day, hours, minutes });
+	console.log("🔍 parseDateTimeLocal - Local date:", localDate.toString());
+	console.log("🔍 parseDateTimeLocal - ISO string:", localDate.toISOString());
+	console.log("🔍 parseDateTimeLocal - getTime():", localDate.getTime());
+
+	return localDate;
+}
+
 export const emailRouter = {
 	createEmail: protectedProcedure
 		.input(createEmailSchema)
@@ -67,21 +100,10 @@ export const emailRouter = {
 				console.log("📅 SCHEDULED DATE DEBUG:");
 				console.log("  - Input scheduledFor:", input.scheduledFor);
 
-				// datetime-local gives us "YYYY-MM-DDTHH:mm" in local time
-				// Use date-fns parseISO to parse the datetime string properly
 				try {
-					// Convert datetime-local format to ISO format for parsing
-					const isoString = input.scheduledFor.includes('Z')
-						? input.scheduledFor
-						: `${input.scheduledFor}:00`; // Add seconds if missing
+					scheduledFor = parseDateTimeLocal(input.scheduledFor);
 
-					scheduledFor = parseISO(isoString);
-
-					if (!isValid(scheduledFor)) {
-						throw new Error("Invalid date format");
-					}
-
-					console.log("  - Parsed with date-fns parseISO:", scheduledFor.toString());
+					console.log("  - Final scheduledFor:", scheduledFor.toString());
 					console.log("  - scheduledFor ISO:", scheduledFor.toISOString());
 					console.log("  - scheduledFor getTime():", scheduledFor.getTime());
 					console.log("  - Time difference (ms):", scheduledFor.getTime() - currentTime.getTime());
@@ -130,19 +152,8 @@ export const emailRouter = {
 			// Handle datetime-local input properly
 			let scheduledFor = new Date();
 			if (input.scheduledFor) {
-				// datetime-local gives us "YYYY-MM-DDTHH:mm" in local time
-				// Use date-fns parseISO to parse the datetime string properly
 				try {
-					// Convert datetime-local format to ISO format for parsing
-					const isoString = input.scheduledFor.includes('Z')
-						? input.scheduledFor
-						: `${input.scheduledFor}:00`; // Add seconds if missing
-
-					scheduledFor = parseISO(isoString);
-
-					if (!isValid(scheduledFor)) {
-						throw new Error("Invalid date format");
-					}
+					scheduledFor = parseDateTimeLocal(input.scheduledFor);
 				} catch (error) {
 					console.error("❌ Bulk email date parsing error:", error);
 					throw new Error(`Invalid datetime format: ${input.scheduledFor}`);
@@ -276,19 +287,8 @@ export const emailRouter = {
 			// Handle datetime-local input properly for updates
 			let scheduledFor = undefined;
 			if (input.scheduledFor) {
-				// datetime-local gives us "YYYY-MM-DDTHH:mm" in local time
-				// Use date-fns parseISO to parse the datetime string properly
 				try {
-					// Convert datetime-local format to ISO format for parsing
-					const isoString = input.scheduledFor.includes('Z')
-						? input.scheduledFor
-						: `${input.scheduledFor}:00`; // Add seconds if missing
-
-					scheduledFor = parseISO(isoString);
-
-					if (!isValid(scheduledFor)) {
-						throw new Error("Invalid date format");
-					}
+					scheduledFor = parseDateTimeLocal(input.scheduledFor);
 				} catch (error) {
 					console.error("❌ Update email date parsing error:", error);
 					throw new Error(`Invalid datetime format: ${input.scheduledFor}`);
