@@ -92,7 +92,7 @@ RESEND_WEBHOOK_SECRET=whsec_xxxxxxxxxxxxxxxxxxxxxxxx
 ### 3. Configure Webhooks (for tracking)
 
 1. Go to Resend Dashboard → Webhooks
-2. Add webhook URL: `https://yourdomain.com/api/webhooks/resend`
+2. Add webhook URL: `https://orpc-better-t-stack-web.vercel.app/api/webhooks/resend`
 3. Select events: `email.delivered`, `email.opened`, `email.clicked`, `email.bounced`, `email.complained`
 4. Copy the webhook secret to your `.env` file
 

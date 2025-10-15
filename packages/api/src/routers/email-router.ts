@@ -9,14 +9,14 @@ const createEmailSchema = z.object({
 	textBody: z.string().optional(),
 	recipientEmail: z.string().email("Invalid email address"),
 	recipientName: z.string().optional(),
-	scheduledFor: z.string().datetime().optional(),
+	scheduledFor: z.string().optional(),
 });
 
 const createBulkEmailSchema = z.object({
 	subject: z.string().min(1, "Subject is required").max(255),
 	htmlBody: z.string().min(1, "Email body is required"),
 	textBody: z.string().optional(),
-	scheduledFor: z.string().datetime().optional(),
+	scheduledFor: z.string().optional(),
 	csvData: z.string().min(1, "CSV data is required"),
 });
 
@@ -38,7 +38,7 @@ const updateEmailSchema = z.object({
 	subject: z.string().min(1).max(255).optional(),
 	htmlBody: z.string().optional(),
 	textBody: z.string().optional(),
-	scheduledFor: z.string().datetime().optional(),
+	scheduledFor: z.string().optional(),
 });
 
 const getStatsSchema = z
