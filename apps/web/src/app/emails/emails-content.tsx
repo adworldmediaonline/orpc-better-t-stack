@@ -96,6 +96,7 @@ export function EmailsContent() {
 	const { data, isLoading, error } = useQuery({
 		...orpc.emails.getEmails.queryOptions({ page: 1, limit: 1000 }), // Get more emails for client-side filtering
 		queryKey: ["emails"] as const,
+		refetchInterval: 5000, // Auto-refresh every 5 seconds
 	});
 
 	const columns: ColumnDef<Email>[] = useMemo(
@@ -285,10 +286,10 @@ export function EmailsContent() {
 															${recipient.status === 'DELIVERED'
 																? 'bg-success/10 text-success border-success/20'
 																: recipient.status === 'OPENED'
-																? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/20 dark:text-blue-300 dark:border-blue-800'
-																: recipient.status === 'BOUNCED'
-																? 'bg-destructive/10 text-destructive border-destructive/20'
-																: 'bg-muted/10 text-muted-foreground border-muted/20'
+																	? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/20 dark:text-blue-300 dark:border-blue-800'
+																	: recipient.status === 'BOUNCED'
+																		? 'bg-destructive/10 text-destructive border-destructive/20'
+																		: 'bg-muted/10 text-muted-foreground border-muted/20'
 															}
 														`}
 													>
@@ -497,13 +498,13 @@ export function EmailsContent() {
 						<Mail className="h-8 w-8 text-muted-foreground" />
 					</div>
 					<h3 className="text-lg font-semibold mb-2">No emails found</h3>
-								<p className="text-muted-foreground mb-4">
+					<p className="text-muted-foreground mb-4">
 						Get started by creating your first email campaign
-								</p>
-								<Button onClick={() => router.push("/emails/new")}>
-									<Plus className="mr-2 h-4 w-4" />
-									Create Your First Email
-								</Button>
+					</p>
+					<Button onClick={() => router.push("/emails/new")}>
+						<Plus className="mr-2 h-4 w-4" />
+						Create Your First Email
+					</Button>
 				</div>
 			) : (
 				<div className="w-full">
@@ -518,9 +519,9 @@ export function EmailsContent() {
 													{header.isPlaceholder
 														? null
 														: flexRender(
-																header.column.columnDef.header,
-																header.getContext()
-															)}
+															header.column.columnDef.header,
+															header.getContext()
+														)}
 												</TableHead>
 											);
 										})}
