@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "../index.css";
 import Providers from "@/components/providers";
-import Header from "@/components/header";
+
 
 // Import cron manager to auto-start cron jobs
 import "@/lib/cron/cron-manager";
@@ -27,6 +27,7 @@ export default function RootLayout({
 }: Readonly<{
 	children: React.ReactNode;
 }>) {
+
 	return (
 		<html lang="en" suppressHydrationWarning>
 			<body
@@ -34,7 +35,7 @@ export default function RootLayout({
 			>
 				<Providers>
 					<div className="grid grid-rows-[auto_1fr] h-svh">
-						<Header />
+
 						{children}
 					</div>
 				</Providers>
