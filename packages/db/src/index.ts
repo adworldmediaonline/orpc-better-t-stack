@@ -10,8 +10,10 @@ config({ path: "../../apps/web/.env" });
 // This prevents errors when Accelerate is not configured
 const prismaClient = new PrismaClient();
 
-const prisma = process.env.PRISMA_ACCELERATE_API_KEY
+// Conditionally apply Accelerate extension, but always return as PrismaClient type
+// This ensures TypeScript compatibility while allowing optional Accelerate
+const prisma = (process.env.PRISMA_ACCELERATE_API_KEY
 	? prismaClient.$extends(withAccelerate())
-	: prismaClient;
+	: prismaClient) as PrismaClient;
 
 export default prisma;
