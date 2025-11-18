@@ -1,3 +1,4 @@
+
 model User {
   id            String    @id @map("_id")
   name          String
@@ -10,6 +11,8 @@ model User {
   accounts      Account[]
   todos         Todo[]
   emails        Email[]
+
+  role String?
 
   @@unique([email])
   @@map("user")
@@ -99,20 +102,20 @@ enum EmailEventType {
 }
 
 model Email {
-  id             String      @id @default(cuid()) @map("_id")
-  userId         String
-  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  subject        String      @db.VarChar(255)
-  htmlBody       String      @db.Text
-  textBody       String?     @db.Text
-  scheduledFor   DateTime
-  status         EmailStatus @default(SCHEDULED)
-  sentAt         DateTime?
-  resendEmailId  String?
-  error          String?     @db.Text
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
-  recipients     EmailRecipient[]
+  id            String           @id @default(cuid()) @map("_id")
+  userId        String
+  user          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subject       String           @db.VarChar(255)
+  htmlBody      String           @db.Text
+  textBody      String?          @db.Text
+  scheduledFor  DateTime
+  status        EmailStatus      @default(SCHEDULED)
+  sentAt        DateTime?
+  resendEmailId String?
+  error         String?          @db.Text
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  recipients    EmailRecipient[]
 
   @@index([userId])
   @@index([status])
@@ -122,20 +125,20 @@ model Email {
 }
 
 model EmailRecipient {
-  id             String           @id @default(cuid()) @map("_id")
+  id             String          @id @default(cuid()) @map("_id")
   emailId        String
-  email          Email            @relation(fields: [emailId], references: [id], onDelete: Cascade)
+  email          Email           @relation(fields: [emailId], references: [id], onDelete: Cascade)
   recipientEmail String
   recipientName  String?
-  status         RecipientStatus  @default(PENDING)
+  status         RecipientStatus @default(PENDING)
   deliveredAt    DateTime?
   openedAt       DateTime?
   clickedAt      DateTime?
   bouncedAt      DateTime?
   complaintAt    DateTime?
   resendEmailId  String?
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
   events         EmailEvent[]
 
   @@index([emailId])
@@ -145,14 +148,14 @@ model EmailRecipient {
 }
 
 model EmailEvent {
-  id               String          @id @default(cuid()) @map("_id")
+  id               String         @id @default(cuid()) @map("_id")
   emailRecipientId String
-  recipient        EmailRecipient  @relation(fields: [emailRecipientId], references: [id], onDelete: Cascade)
+  recipient        EmailRecipient @relation(fields: [emailRecipientId], references: [id], onDelete: Cascade)
   eventType        EmailEventType
   eventData        Json?
   ipAddress        String?
   userAgent        String?
-  createdAt        DateTime        @default(now())
+  createdAt        DateTime       @default(now())
 
   @@index([emailRecipientId])
   @@index([eventType])
