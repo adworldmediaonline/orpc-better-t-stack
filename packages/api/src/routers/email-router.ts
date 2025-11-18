@@ -222,7 +222,7 @@ export const emailRouter = {
 			const skip = (input.page - 1) * input.limit;
 
 			const where = {
-				userId: context.session.user.id,
+				...(context.session.user.role !== "admin" && { userId: context.session.user.id }),
 				...(input.status && { status: input.status }),
 				...(input.search && {
 					OR: [
