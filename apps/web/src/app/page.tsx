@@ -1,15 +1,19 @@
-"use client";
 
-import SignInForm from "@/components/sign-in-form";
-import SignUpForm from "@/components/sign-up-form";
-import { useState } from "react";
+import AuthForm from "@/components/auth-form";
+import { auth } from "@orpc-better-t-stack/auth";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 
-export default function Home() {
-	const [showSignIn, setShowSignIn] = useState(true);
+export default async function Home() {
 
-	return showSignIn ? (
-		<SignInForm onSwitchToSignUp={() => setShowSignIn(false)} />
-	) : (
-		<SignUpForm onSwitchToSignIn={() => setShowSignIn(true)} />
-	);
+	const session = await auth.api.getSession({
+		headers: await headers(),
+	});
+
+	if (session) {
+		redirect("/dashboard");
+	}
+
+	return <AuthForm />;
+
 }
