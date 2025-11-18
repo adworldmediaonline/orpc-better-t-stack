@@ -22,7 +22,7 @@ const config: runtime.GetPrismaClientConfig = {
       "value": "prisma-client"
     },
     "output": {
-      "value": "/Users/sunilkumar/Developer/orpc-better-t-stack/packages/db/prisma/generated",
+      "value": "/Users/sunilkumar/Developer/GI-cronjobs/packages/db/prisma/generated",
       "fromEnvVar": null
     },
     "config": {
@@ -37,7 +37,7 @@ const config: runtime.GetPrismaClientConfig = {
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "/Users/sunilkumar/Developer/orpc-better-t-stack/packages/db/prisma/schema/schema.prisma",
+    "sourceFilePath": "/Users/sunilkumar/Developer/GI-cronjobs/packages/db/prisma/schema/schema.prisma",
     "isCustomOutput": true
   },
   "relativePath": "../schema",

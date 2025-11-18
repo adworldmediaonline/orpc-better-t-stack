@@ -5,6 +5,8 @@ import { ModeToggle } from "./mode-toggle";
 import UserMenu from "./user-menu";
 import { Mail, Zap, Home, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import logo from '../../public/logo.png'
+import Image from "next/image";
 
 export default function Header() {
 	const pathname = usePathname();
@@ -27,12 +29,9 @@ export default function Header() {
 				<div className="flex h-16 items-center justify-between">
 					{/* Logo */}
 					<Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-						<div className="p-2 rounded-lg bg-primary/10">
-							<Zap className="h-6 w-6 text-primary" />
+						<div className="p-2 rounded-lg bg-primary/10  w-14 h-14 relative overflow-hidden">
+							<Image src={logo} alt="logo" className="object-cover" />
 						</div>
-						<span className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-							SendLater
-						</span>
 					</Link>
 
 					{/* Navigation */}
