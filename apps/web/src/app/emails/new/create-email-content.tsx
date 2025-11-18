@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { client } from "@/utils/orpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -48,6 +48,7 @@ type BulkEmailForm = z.infer<typeof bulkEmailSchema>;
 
 export function CreateEmailContent() {
 	const router = useRouter();
+	const queryClient = useQueryClient();
 	const [activeTab, setActiveTab] = useState<"single" | "bulk">("single");
 
 	// Single email form
@@ -79,8 +80,9 @@ export function CreateEmailContent() {
 		mutationFn: async (data: SingleEmailForm) => {
 			return await client.emails.createEmail(data);
 		},
-		onSuccess: () => {
+		onSuccess: async () => {
 			toast.success("Email scheduled successfully!");
+			await queryClient.invalidateQueries({ queryKey: ["emails"] });
 			router.push("/emails");
 		},
 		onError: (error) => {
@@ -92,10 +94,11 @@ export function CreateEmailContent() {
 		mutationFn: async (data: BulkEmailForm) => {
 			return await client.emails.createBulkEmail(data);
 		},
-		onSuccess: (data) => {
+		onSuccess: async (data) => {
 			toast.success(
 				`Bulk email scheduled! ${data.summary.valid} recipients added${data.summary.invalid > 0 ? `, ${data.summary.invalid} invalid` : ""}`
 			);
+			await queryClient.invalidateQueries({ queryKey: ["emails"] });
 			router.push("/emails");
 		},
 		onError: (error) => {
@@ -116,21 +119,19 @@ export function CreateEmailContent() {
 			<div className="flex gap-4 border-b">
 				<button
 					onClick={() => setActiveTab("single")}
-					className={`px-4 py-2 font-medium transition-colors ${
-						activeTab === "single"
-							? "border-b-2 border-primary text-primary"
-							: "text-muted-foreground hover:text-foreground"
-					}`}
+					className={`px-4 py-2 font-medium transition-colors ${activeTab === "single"
+						? "border-b-2 border-primary text-primary"
+						: "text-muted-foreground hover:text-foreground"
+						}`}
 				>
 					Single Email
 				</button>
 				<button
 					onClick={() => setActiveTab("bulk")}
-					className={`px-4 py-2 font-medium transition-colors ${
-						activeTab === "bulk"
-							? "border-b-2 border-primary text-primary"
-							: "text-muted-foreground hover:text-foreground"
-					}`}
+					className={`px-4 py-2 font-medium transition-colors ${activeTab === "bulk"
+						? "border-b-2 border-primary text-primary"
+						: "text-muted-foreground hover:text-foreground"
+						}`}
 				>
 					Bulk Upload
 				</button>
