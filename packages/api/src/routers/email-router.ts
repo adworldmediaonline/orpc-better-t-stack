@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { protectedProcedure } from "../index";
 import prisma from "@orpc-better-t-stack/db";
-import { processBulkCsv, retryFailedEmail } from "@orpc-better-t-stack/email-service";
+import { processBulkCsv, retryFailedEmail, sendScheduledEmail, sendEmail } from "@orpc-better-t-stack/email-service";
 
 const createEmailSchema = z.object({
 	subject: z.string().min(1, "Subject is required").max(255, "Subject must be 255 characters or less"),
@@ -83,7 +83,6 @@ export const emailRouter = {
 			// Handle datetime-local input properly
 			let scheduledFor = new Date();
 
-
 			if (input.scheduledFor) {
 				try {
 					scheduledFor = storeExactTime(input.scheduledFor);
@@ -113,7 +112,32 @@ export const emailRouter = {
 				},
 			});
 
-			return email;
+			// Use Resend's built-in scheduled send feature
+			const now = new Date();
+			if (scheduledFor > now) {
+				// Schedule for future delivery using Resend
+				await sendScheduledEmail({
+					email,
+					recipients: email.recipients,
+					scheduledFor,
+				});
+			} else {
+				// Send immediately if scheduled time is in the past or now
+				await sendEmail({
+					email,
+					recipients: email.recipients,
+				});
+			}
+
+			// Fetch updated email to return latest status
+			const updatedEmail = await prisma.email.findUnique({
+				where: { id: email.id },
+				include: {
+					recipients: true,
+				},
+			});
+
+			return updatedEmail || email;
 		}),
 
 	createBulkEmail: protectedProcedure
@@ -156,8 +180,33 @@ export const emailRouter = {
 				},
 			});
 
+			// Use Resend's built-in scheduled send feature
+			const now = new Date();
+			if (scheduledFor > now) {
+				// Schedule for future delivery using Resend
+				await sendScheduledEmail({
+					email,
+					recipients: email.recipients,
+					scheduledFor,
+				});
+			} else {
+				// Send immediately if scheduled time is in the past or now
+				await sendEmail({
+					email,
+					recipients: email.recipients,
+				});
+			}
+
+			// Fetch updated email to return latest status
+			const updatedEmail = await prisma.email.findUnique({
+				where: { id: email.id },
+				include: {
+					recipients: true,
+				},
+			});
+
 			return {
-				email,
+				email: updatedEmail || email,
 				summary: {
 					total: bulkResult.total,
 					valid: bulkResult.valid.length,

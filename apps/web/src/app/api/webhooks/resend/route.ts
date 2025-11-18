@@ -28,8 +28,40 @@ export async function POST(req: NextRequest) {
 		}
 
 		switch (type) {
+			case "email.sent":
+				// Update email status to SENT when Resend actually sends it
+				// This is especially important for scheduled emails
+				await prisma.email.update({
+					where: { id: recipient.emailId },
+					data: {
+						status: "SENT",
+						sentAt: new Date(),
+					},
+				});
+
+				await prisma.emailEvent.create({
+					data: {
+						emailRecipientId: recipient.id,
+						eventType: "DELIVERED", // Use DELIVERED as closest match
+						eventData: data,
+					},
+				});
+				break;
+
 			case "email.delivered":
 			case "email.delivery_delayed":
+				// Update email status to SENT if not already (for scheduled emails)
+				await prisma.email.updateMany({
+					where: {
+						id: recipient.emailId,
+						status: "SCHEDULED", // Only update if still scheduled
+					},
+					data: {
+						status: "SENT",
+						sentAt: new Date(),
+					},
+				});
+
 				await prisma.emailRecipient.update({
 					where: { id: recipient.id },
 					data: {

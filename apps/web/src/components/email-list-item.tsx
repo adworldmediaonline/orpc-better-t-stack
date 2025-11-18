@@ -70,6 +70,10 @@ export function EmailListItem({ email, onClick }: EmailListItemProps) {
 						<p className="text-sm text-muted-foreground mb-3">
 							{email.status === "SENT" && email.sentAt
 								? `Sent ${formatScheduledTime(new Date(email.sentAt))}`
+								: email.status === "SCHEDULED"
+								? `Scheduled for ${formatScheduledTime(new Date(email.scheduledFor))}`
+								: email.status === "SENDING"
+								? `Sending...`
 								: `Scheduled for ${formatScheduledTime(new Date(email.scheduledFor))}`}
 						</p>
 
