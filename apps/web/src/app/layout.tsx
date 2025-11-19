@@ -18,8 +18,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-	title: "Send later",
-	description: "Send later - Send your emails later with ease",
+	title: "info cron jobs",
+	description: "Info cron jobs",
 };
 
 export default function RootLayout({
