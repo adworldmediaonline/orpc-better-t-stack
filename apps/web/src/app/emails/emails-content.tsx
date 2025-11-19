@@ -193,13 +193,8 @@ export function EmailsContent() {
 				},
 				cell: ({ row }) => {
 					const date = new Date(row.getValue("scheduledFor"));
-					// Format date for display - treat stored UTC as naive local time
-					const year = date.getUTCFullYear();
-					const month = date.getUTCMonth();
-					const day = date.getUTCDate();
-					const hours = date.getUTCHours();
-					const minutes = date.getUTCMinutes();
-					const localDate = new Date(year, month, day, hours, minutes);
+					// Display in local time
+					const localDate = date;
 
 					return (
 						<div className="flex items-center gap-2">
