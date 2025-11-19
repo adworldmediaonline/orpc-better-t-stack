@@ -68,11 +68,18 @@ function storeExactTime(datetimeLocalString: string): Date {
 		throw new Error("Invalid datetime components");
 	}
 
-	// Create UTC date to preserve exact time selected by user
-	// This ensures the time is stored exactly as selected regardless of server timezone
-	const exactDate = new Date(Date.UTC(year, month - 1, day, hours, minutes));
+	// Create date in IST (UTC+5:30)
+	// We create a UTC date with the components, then subtract 5.5 hours to get the correct UTC timestamp
+	const date = new Date(Date.UTC(year, month - 1, day, hours, minutes));
 
-	return exactDate;
+	// Shift by -5.5 hours (-330 minutes) to convert "IST components in UTC" to "Actual UTC"
+	// Example: User selects 20:12 IST.
+	// Date.UTC creates 20:12 UTC.
+	// We subtract 5.5 hours -> 14:42 UTC.
+	// 14:42 UTC is 20:12 IST. Correct.
+	date.setMinutes(date.getMinutes() - 330);
+
+	return date;
 }
 
 
@@ -85,7 +92,9 @@ export const emailRouter = {
 
 			if (input.scheduledFor) {
 				try {
+					console.log(`🕒 Input scheduledFor string: ${input.scheduledFor}`);
 					scheduledFor = storeExactTime(input.scheduledFor);
+					console.log(`🕒 Parsed scheduledFor Date: ${scheduledFor.toISOString()}`);
 				} catch (error) {
 					console.error("❌ Date parsing error:", error);
 					throw new Error(`Invalid datetime format: ${input.scheduledFor}`);
@@ -153,7 +162,9 @@ export const emailRouter = {
 			let scheduledFor = new Date();
 			if (input.scheduledFor) {
 				try {
+					console.log(`🕒 [BULK] Input scheduledFor string: ${input.scheduledFor}`);
 					scheduledFor = storeExactTime(input.scheduledFor);
+					console.log(`🕒 [BULK] Parsed scheduledFor Date: ${scheduledFor.toISOString()}`);
 				} catch (error) {
 					console.error("❌ Bulk email date parsing error:", error);
 					throw new Error(`Invalid datetime format: ${input.scheduledFor}`);
