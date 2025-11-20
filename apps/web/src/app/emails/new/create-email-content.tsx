@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { DateTimePicker } from "@/components/ui/datetime-picker";
+import { TiptapEditor } from "@/components/ui/tiptap-editor";
 
 // Form schemas
 const singleEmailSchema = z.object({
@@ -195,14 +196,15 @@ export function CreateEmailContent() {
 										<FormItem>
 											<FormLabel>Email Body (HTML) *</FormLabel>
 											<FormControl>
-												<Textarea
+												<TiptapEditor
+													value={field.value}
+													onChange={field.onChange}
 													placeholder="Enter your email content..."
 													className="min-h-[200px]"
-													{...field}
 												/>
 											</FormControl>
 											<p className="text-xs text-muted-foreground">
-												You can use HTML tags for formatting
+												You can use the toolbar for formatting
 											</p>
 											<FormMessage />
 										</FormItem>
@@ -314,10 +316,11 @@ export function CreateEmailContent() {
 										<FormItem>
 											<FormLabel>Email Body (HTML) *</FormLabel>
 											<FormControl>
-												<Textarea
+												<TiptapEditor
+													value={field.value}
+													onChange={field.onChange}
 													placeholder="Enter your email content..."
 													className="min-h-[200px]"
-													{...field}
 												/>
 											</FormControl>
 											<FormMessage />
