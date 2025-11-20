@@ -1,5 +1,6 @@
 import { config } from "dotenv";
 import { PrismaClient } from "../prisma/generated/client";
+export * from "../prisma/generated/client";
 import { withAccelerate } from "@prisma/extension-accelerate";
 
 // Load environment variables from the web app's .env file (for local development)
