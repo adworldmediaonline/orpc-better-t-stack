@@ -148,9 +148,10 @@ export function EmailsContent() {
 							</div>
 							<div>
 								<div className="font-medium text-foreground">{email.subject}</div>
-								<div className="text-sm text-muted-foreground">
+								{/* todo uncomment later */}
+								{/* <div className="text-sm text-muted-foreground">
 									Created {format(new Date(email.createdAt), "MMM d, yyyy")}
-								</div>
+								</div> */}
 							</div>
 						</div>
 					);
